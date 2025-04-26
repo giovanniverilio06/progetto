@@ -1,0 +1,468 @@
+/* Main styles for admin dashboard */
+body {
+  font-family: 'Lato', sans-serif;
+  background-color: #f8f9fa;
+}
+
+.sidebar {
+  position: fixed;
+  top: 40px !important;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  padding: 48px 0 0;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar-sticky {
+  position: relative;
+  top: 0;
+  height: calc(100vh - 48px);
+  padding-top: .5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar .nav-link {
+  font-weight: 500;
+  color: #333;
+}
+
+.sidebar .nav-link.active {
+  color: #2470dc;
+}
+
+.sidebar .nav-link:hover {
+  color: #007bff;
+}
+
+.sidebar-heading {
+  font-size: .75rem;
+  text-transform: uppercase;
+}
+        /* Stile aggiuntivo per la sidebar */
+        .avatar-circle {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+      }
+      
+      /* Barra laterale */
+      #sidebar {
+          height: 100vh;
+          position: fixed;
+          top: 0;
+          left: 0;
+      }
+      
+      /* Contenuto principale con margine per la sidebar */
+      main {
+          margin-left: 240px; /* Larghezza della sidebar */
+          padding-top: 1.5rem;
+      }
+      
+      @media (max-width: 768px) {
+          #sidebar {
+              position: static;
+              height: auto;
+          }
+          main {
+              margin-left: 0;
+          }
+      }
+      
+      .nav-link {
+          color: #343a40;
+          border-radius: 0;
+          padding: 0.75rem 1.25rem;
+      }
+      
+      .nav-link.active {
+          background-color: #007bff;
+          color: white;
+      }
+      
+      .nav-link:hover:not(.active) {
+          background-color: #f8f9fa;
+      }
+.navbar-brand {
+  font-family: 'Catamaran', sans-serif;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 1rem;
+  background-color: transparent; /* Rimuove lo sfondo scuro */
+  box-shadow: none; /* Rimuove l'ombra */
+}
+
+/* Map styles */
+.leaflet-popup-content {
+  min-width: 200px;
+}
+
+/* Photo gallery styles */
+.photo-item {
+  margin-bottom: 15px;
+}
+
+.photo-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.photo-container img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.photo-container:hover img {
+  transform: scale(1.05);
+}
+
+.photo-caption {
+  margin-top: 5px;
+}
+
+.photo-caption textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 40px;
+}
+
+/* Card hover effects */
+.card {
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Table styling */
+.table th {
+  background-color: #f2f2f2;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Button and icon styling */
+.btn-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+}
+
+.fa-shield-alt {
+  color: #ffc107;
+}
+
+/* Modal styling */
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Stats cards */
+.card-title {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.card-text.display-6 {
+  font-size: 2.5rem;
+  font-weight: 300;
+}
+
+/* Responsive design adjustments */
+@media (max-width: 767.98px) {
+  .sidebar {
+      position: static;
+      height: auto;
+      padding-top: 0;
+  }
+  
+  
+  .photo-container img {
+      height: 150px;
+  }
+  
+  #sidebar {
+      position: static;
+      height: auto;
+  }
+  
+  .container-fluid {
+      min-height: auto;
+  }
+  
+  footer.footer {
+      position: static;
+  }
+
+  
+  /* Spaziatura ridotta in mobile */
+  .navbar .nav-link {
+    padding: 0.3rem 0.5rem;
+  }
+
+  .navbar-collapse {
+    position: absolute !important;
+    top: 40px !important;
+    left: 0 !important;
+    right: 0 !important;
+    background-color: #212529 !important;
+    z-index: 1000 !important;
+    padding: 0.5rem 1rem !important;
+  }
+  
+  .navbar .nav-link {
+    height: 32px !important;
+  }
+}
+
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa;
+}
+
+.toggle-password {
+  cursor: pointer;
+}
+
+.password-strength {
+  height: 5px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background-color: #e9ecef;
+}
+
+.strength-weak { width: 33%; height: 100%; background-color: #dc3545; border-radius: 3px; }
+.strength-medium { width: 66%; height: 100%; background-color: #ffc107; border-radius: 3px; }
+.strength-strong { width: 100%; height: 100%; background-color: #28a745; border-radius: 3px; }
+
+/* Aggiungi questi stili per il layout del dashboard e del footer */
+
+/* Fix per il footer e la barra laterale */
+.container-fluid {
+    min-height: calc(100vh - 60px - 170px); /* Altezza totale meno header e footer */
+}
+
+footer.footer {
+    position: relative;
+    margin-top: 2rem;
+    z-index: 100; /* Assicura che il footer sia sopra altri elementi */
+    clear: both;
+}
+
+/* Stile per la sidebar */
+#sidebar {
+    z-index: 1;
+}
+
+/* Stile per avatar circolari */
+.avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Stile per il contenuto principale */
+main.col-md-9 {
+    padding-bottom: 3rem; /* Spazio per il footer */
+}
+
+/* Stile per le card */
+.card-header {
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    background-color: rgba(0,0,0,.03);
+}
+
+/* Stili per la tabella perizie */
+#perizieTable th, #perizieTable td {
+    vertical-align: middle;
+}
+
+/* Sostituisci o aggiungi questi stili per sistemare la navbar */
+
+/* Nuovi stili per la navbar compatta */
+
+/* Rimuovi prima tutti gli stili di navbar che hai attualmente */
+.navbar {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+  background-color: #212529 !important;
+}
+
+.navbar-brand {
+  font-size: 0.9rem !important;
+  padding: 0 15px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+}
+
+.navbar .nav-link {
+  padding: 0 10px !important;
+  font-size: 0.85rem !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.navbar-brand i {
+  font-size: 0.85rem !important;
+  margin-right: 6px !important;
+}
+
+/* Aggiusta la posizione del container dentro la navbar */
+.navbar .container-fluid {
+  padding: 0 15px !important;
+  height: 40px !important;
+}
+
+/* Aggiusta il toggler per mobile */
+.navbar-toggler {
+  padding: 2px 5px !important;
+  font-size: 0.85rem !important;
+  margin-right: 5px !important;
+}
+
+/* Aggiusta l'allineamento verticale degli elementi */
+.navbar .navbar-nav {
+  height: 40px !important; 
+}
+
+.navbar-collapse {
+  top: 40px !important;
+}
+
+/* Aggiusta il dropdown per i menu */
+.navbar .dropdown-menu {
+  margin-top: 0 !important;
+  padding: 0.25rem 0 !important;
+  font-size: 0.85rem !important;
+}
+
+/* Nome utente nella navbar */
+.navbar .text-white {
+  font-size: 0.85rem !important;
+}
+
+/* Pulsante di logout */
+.navbar .btn-sm {
+  padding: 0.15rem 0.5rem !important;
+  font-size: 0.75rem !important;
+  height: 26px !important;
+}
+
+/* Aggiusta la sidebar in base alla nuova altezza navbar */
+.sidebar {
+  top: 40px !important; 
+}
+
+/* Aggiusta il padding del body */
+
+
+/* Riduzione dimensione del brand */
+.navbar-brand {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 1rem;
+  background-color: transparent; /* Rimuove lo sfondo scuro */
+  box-shadow: none; /* Rimuove l'ombra */
+}
+
+/* Riduzione dimensioni dei link nella navbar */
+.navbar .nav-link {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* Riduci la dimensione dell'icona nel brand */
+.navbar-brand i {
+  font-size: 1rem;
+}
+
+/* Rendi più compatte le dropdown */
+.navbar .dropdown-menu {
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+}
+
+.navbar .dropdown-item {
+  padding: 0.25rem 1rem;
+}
+
+/* Riduzione padding nel dropdown toggle */
+.navbar .dropdown-toggle {
+  padding-right: 0.75rem;
+}
+
+/* Stile per la sidebar */
+.sidebar {
+  top: 56px; /* Adattato alla nuova altezza della navbar */
+}
+
+/* Stili per la navbar e l'avatar ridimensionati */
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .avatar-circle {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+}
+
+/* Stile migliorato per i link della navbar */
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link.active {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+/* Miglioramento spaziatura generale */
+main.container-fluid {
+    padding-top: 1rem;
+}

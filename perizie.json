@@ -1,0 +1,225 @@
+
+[
+    {
+      "id": "PRZ-2025-001",
+      "operatoreId": "OP-001",
+      "operatore": "Marco Rossi",
+      "data": "2025-04-24T10:30:00",
+      "tipo": "incendio",
+      "posizione": {
+        "indirizzo": "Milano, Via Roma 123",
+        "lat": 45.4642,
+        "lng": 9.1900
+      },
+      "descrizione": "Danni da incendio nel piano superiore dell'abitazione. Soffitto e pareti danneggiate, impianto elettrico compromesso.",
+      "cliente": {
+        "nome": "Roberto Bianchi",
+        "contatto": "3391234567"
+      },
+      "polizza": "POL-123456",
+      "priorita": "high",
+      "stato": "completed",
+      "fotografie": [
+        {
+          "id": "FOTO-001-001",
+          "url": "https://example.com/photos/incendio001_1.jpg",
+          "timestamp": "2025-04-24T10:35:12",
+          "commento": "Ingresso dell'abitazione con segni evidenti di fumo"
+        },
+        {
+          "id": "FOTO-001-002",
+          "url": "https://example.com/photos/incendio001_2.jpg",
+          "timestamp": "2025-04-24T10:37:45",
+          "commento": "Cucina con danni strutturali al soffitto"
+        },
+        {
+          "id": "FOTO-001-003",
+          "url": "https://example.com/photos/incendio001_3.jpg",
+          "timestamp": "2025-04-24T10:40:22",
+          "commento": "Impianto elettrico danneggiato nella zona living"
+        },
+        {
+          "id": "FOTO-001-004",
+          "url": "https://example.com/photos/incendio001_4.jpg",
+          "timestamp": "2025-04-24T10:42:18",
+          "commento": "Punto di origine dell'incendio (presa elettrica difettosa)"
+        },
+        {
+          "id": "FOTO-001-005",
+          "url": "https://example.com/photos/incendio001_5.jpg",
+          "timestamp": "2025-04-24T10:45:33",
+          "commento": "Danni ai mobili in soggiorno"
+        },
+        {
+          "id": "FOTO-001-006",
+          "url": "https://example.com/photos/incendio001_6.jpg",
+          "timestamp": "2025-04-24T10:47:55",
+          "commento": "Condizioni delle pareti nel corridoio principale"
+        },
+        {
+          "id": "FOTO-001-007",
+          "url": "https://example.com/photos/incendio001_7.jpg",
+          "timestamp": "2025-04-24T10:50:10",
+          "commento": "Dettaglio degli arredi danneggiati"
+        },
+        {
+          "id": "FOTO-001-008",
+          "url": "https://example.com/photos/incendio001_8.jpg",
+          "timestamp": "2025-04-24T10:52:25",
+          "commento": "Visuale dall'esterno con danni visibili dalla finestra"
+        }
+      ],
+      "ultimoAggiornamento": "2025-04-24T15:45:00"
+    },
+    {
+      "id": "PRZ-2025-002",
+      "operatoreId": "OP-002",
+      "operatore": "Laura Bianchi",
+      "data": "2025-04-23T14:15:00",
+      "tipo": "allagamento",
+      "posizione": {
+        "indirizzo": "Roma, Via Nazionale 45",
+        "lat": 41.9028,
+        "lng": 12.4964
+      },
+      "descrizione": "Allagamento piano terra causato da rottura tubature. Pavimenti e mobili danneggiati, muri da verificare per umidità.",
+      "cliente": {
+        "nome": "Giuseppe Verdi",
+        "contatto": "3471234567"
+      },
+      "polizza": "POL-234567",
+      "priorita": "medium",
+      "stato": "pending",
+      "fotografie": [
+        {
+          "id": "FOTO-002-001",
+          "url": "https://example.com/photos/allagamento002_1.jpg",
+          "timestamp": "2025-04-23T14:20:05",
+          "commento": "Ingresso allagato con evidenti segni di acqua stagnante"
+        },
+        {
+          "id": "FOTO-002-002",
+          "url": "https://example.com/photos/allagamento002_2.jpg",
+          "timestamp": "2025-04-23T14:25:18",
+          "commento": "Tubatura rotta nel bagno principale"
+        },
+        {
+          "id": "FOTO-002-003",
+          "url": "https://example.com/photos/allagamento002_3.jpg",
+          "timestamp": "2025-04-23T14:30:45",
+          "commento": "Danni a pavimento in parquet del soggiorno"
+        }
+      ],
+      "ultimoAggiornamento": "2025-04-24T09:30:00"
+    },
+    {
+      "id": "PRZ-2025-003",
+      "operatoreId": "OP-003",
+      "operatore": "Giovanni Verdi",
+      "data": "2025-04-25T09:00:00",
+      "tipo": "grandine",
+      "posizione": {
+        "indirizzo": "Napoli, Piazza del Plebiscito 1",
+        "lat": 40.8518,
+        "lng": 14.2681
+      },
+      "descrizione": "Danni da grandine sul tetto e vetri rotti. Da verificare anche possibili infiltrazioni.",
+      "cliente": {
+        "nome": "Anna Esposito",
+        "contatto": "3661234567"
+      },
+      "polizza": "POL-345678",
+      "priorita": "low",
+      "stato": "scheduled",
+      "fotografie": [],
+      "ultimoAggiornamento": "2025-04-23T16:00:00"
+    },
+    {
+      "id": "PRZ-2025-004",
+      "operatoreId": "OP-004",
+      "operatore": "Paolo Neri",
+      "data": "2025-04-24T16:30:00",
+      "tipo": "furto",
+      "posizione": {
+        "indirizzo": "Firenze, Viale dei Colli 12",
+        "lat": 43.7696,
+        "lng": 11.2558
+      },
+      "descrizione": "Furto con scasso. Danneggiati porta d'ingresso, finestre e mobili. Da valutare beni mancanti.",
+      "cliente": {
+        "nome": "Maria Rossi",
+        "contatto": "3481234567"
+      },
+      "polizza": "POL-456789",
+      "priorita": "high",
+      "stato": "pending",
+      "fotografie": [
+        {
+          "id": "FOTO-004-001",
+          "url": "https://example.com/photos/furto004_1.jpg",
+          "timestamp": "2025-04-24T16:35:12",
+          "commento": "Porta d'ingresso con segni di scasso"
+        },
+        {
+          "id": "FOTO-004-002",
+          "url": "https://example.com/photos/furto004_2.jpg",
+          "timestamp": "2025-04-24T16:37:55",
+          "commento": "Finestra forzata nel soggiorno"
+        },
+        {
+          "id": "FOTO-004-003",
+          "url": "https://example.com/photos/furto004_3.jpg",
+          "timestamp": "2025-04-24T16:40:22",
+          "commento": "Armadio in camera da letto scassinato"
+        },
+        {
+          "id": "FOTO-004-004",
+          "url": "https://example.com/photos/furto004_4.jpg",
+          "timestamp": "2025-04-24T16:42:18",
+          "commento": "Cassaforte danneggiata"
+        },
+        {
+          "id": "FOTO-004-005",
+          "url": "https://example.com/photos/furto004_5.jpg",
+          "timestamp": "2025-04-24T16:45:33",
+          "commento": "Segni sul pavimento lasciati dagli intrusi"
+        }
+      ],
+      "ultimoAggiornamento": "2025-04-24T17:15:00"
+    },
+    {
+      "id": "PRZ-2025-005",
+      "operatoreId": "OP-005",
+      "operatore": "Claudia Verdi",
+      "data": "2025-04-25T11:45:00",
+      "tipo": "allagamento",
+      "posizione": {
+        "indirizzo": "Torino, Corso Francia 78",
+        "lat": 45.0703,
+        "lng": 7.6869
+      },
+      "descrizione": "Allagamento cantina condominiale. Da valutare danni strutturali e alle cantine private.",
+      "cliente": {
+        "nome": "Luigi Ferrara",
+        "contatto": "3491234567"
+      },
+      "polizza": "POL-567890",
+      "priorita": "medium",
+      "stato": "pending",
+      "fotografie": [
+        {
+          "id": "FOTO-005-001",
+          "url": "https://example.com/photos/allagamento005_1.jpg",
+          "timestamp": "2025-04-25T11:50:15",
+          "commento": "Accesso alla cantina allagata"
+        },
+        {
+          "id": "FOTO-005-002",
+          "url": "https://example.com/photos/allagamento005_2.jpg",
+          "timestamp": "2025-04-25T11:55:22",
+          "commento": "Tubatura danneggiata che ha causato la perdita"
+        }
+      ],
+      "ultimoAggiornamento": "2025-04-24T18:30:00"
+    }
+  ]
