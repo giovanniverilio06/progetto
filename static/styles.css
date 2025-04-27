@@ -466,3 +466,150 @@ main.col-md-9 {
 main.container-fluid {
     padding-top: 1rem;
 }
+
+.avatar-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+.operator-card {
+  transition: all 0.3s;
+}
+
+.operator-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+#operatori-cards .card {
+  transition: all 0.2s ease;
+}
+
+#operatori-cards .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Stili per le card degli operatori basati sullo stato */
+.operator-card-available {
+    background-color: rgba(40, 167, 69, 0.05); /* Verde chiaro per operatore disponibile */
+    border-left: 4px solid #28a745;
+}
+
+.operator-card-busy {
+    background-color: rgba(220, 53, 69, 0.05); /* Rosso chiaro per operatore occupato */
+    border-left: 4px solid #dc3545;
+}
+
+/* Hover effects per le card */
+.operator-card-available:hover {
+    box-shadow: 0 0.5rem 1rem rgba(40, 167, 69, 0.15) !important;
+}
+
+.operator-card-busy:hover {
+    box-shadow: 0 0.5rem 1rem rgba(220, 53, 69, 0.15) !important;
+}
+
+/* Miglioramenti visivi per i badge di stato */
+.badge.bg-success, .badge.bg-danger {
+    font-size: 0.75rem;
+    font-weight: normal;
+    padding: 0.25em 0.6em;
+}
+
+/* Stile per perizie non assegnabili/disabilitate */
+.inspection-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.filter-container {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 0.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e9ecef;
+}
+
+.filter-container .form-label {
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+/* Badge per lo stato delle perizie */
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+/* Stili per le tabelle nella dashboard */
+.dashboard-table th {
+  white-space: nowrap;
+}
+
+/* Stile per evidenziare le "Nuove Perizie" */
+.card-header h5.new-inspections, 
+.card-header .h5.new-inspections {
+  position: relative;
+}
+
+.card-header h5.new-inspections::after, 
+.card-header .h5.new-inspections::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  background-color: #28a745;
+}
+.add-operator-card {
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+  min-height: 220px;
+}
+
+.add-operator-card:hover {
+  transform: translateY(-5px);
+  border-color: #28a745 !important;
+  background-color: #e8f5e9;
+}
+
+.add-operator-icon {
+  transition: all 0.3s ease;
+}
+
+.add-operator-card:hover .add-operator-icon {
+  transform: scale(1.2);
+}
+.add-operator-card {
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+  min-height: 220px;
+}
+
+.add-operator-card:hover {
+  transform: translateY(-5px);
+  border-color: #28a745 !important;
+  background-color: #e8f5e9;
+}
+
+.add-operator-icon {
+  transition: all 0.3s ease;
+}
+
+.add-operator-card:hover .add-operator-icon {
+  transform: scale(1.2);
+}

@@ -345,74 +345,33 @@
 
             <!-- Sezione Operatori (rinominata da "gestione-utenti-content") -->
             <div id="operatori-content" class="d-none">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Gestione Operatori</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                            <i class="fas fa-user-plus me-2"></i>Nuovo Operatore
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Statistiche operatori -->
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <div class="card bg-primary text-white">
-                            <div class="card-body">
-                                <h5 class="card-title"><i class="fas fa-users me-2"></i>Totale Operatori</h5>
-                                <p class="card-text display-6" id="totalOperators">0</p>
-                            </div>
+                <div class="container-fluid">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Operatori</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <button id="refreshOperatori" class="btn btn-sm btn-outline-secondary me-2">
+                                <i class="fas fa-sync-alt me-1"></i>Aggiorna
+                            </button>
+                            <button id="addOperatoreBtn" class="btn btn-sm btn-primary" onclick="addOperatore()">
+                                <i class="fas fa-user-plus me-1"></i>Nuovo Operatore
+                            </button>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card bg-success text-white">
-                            <div class="card-body">
-                                <h5 class="card-title"><i class="fas fa-check-circle me-2"></i>Operatori Online</h5>
-                                <p class="card-text display-6" id="onlineOperators">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card bg-warning text-dark">
-                            <div class="card-body">
-                                <h5 class="card-title"><i class="fas fa-clipboard-list me-2"></i>In Perizia</h5>
-                                <p class="card-text display-6" id="onDutyOperators">0</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filtro operatori -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" class="form-control" id="searchOperators" placeholder="Cerca operatori...">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <select class="form-select" id="filterOperatorStatus">
-                            <option value="all">Tutti gli stati</option>
-                            <option value="Online">Online</option>
-                            <option value="In Perizia">In Perizia</option>
-                            <option value="Offline">Offline</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-outline-secondary w-100" id="resetOperatorFilters">
-                            <i class="fas fa-undo me-1"></i>Reset
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Cards degli operatori -->
-                <div class="row" id="operatorsCardContainer">
-                    <!-- Le card degli operatori verranno generate dinamicamente qui -->
-                    <div class="col-12 text-center py-5">
+                    
+                    <!-- Alert per errori o messaggi -->
+                    <div id="operatori-alert" class="alert alert-danger d-none" role="alert"></div>
+                    
+                    <!-- Loader animato -->
+                    <div id="operatori-loader" class="text-center py-5">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Caricamento...</span>
                         </div>
-                        <p>Caricamento operatori...</p>
+                        <p class="mt-2 text-muted">Caricamento operatori in corso...</p>
+                    </div>
+                    
+                    <!-- Cards degli operatori -->
+                    <div id="operatori-cards" class="row g-3 mt-2">
+                        <!-- Le card degli operatori verranno generate dinamicamente qui -->
                     </div>
                 </div>
             </div>
