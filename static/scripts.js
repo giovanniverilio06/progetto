@@ -54,69 +54,8 @@ window.onload = function () {
         document.head.appendChild(leafletScript);
     }
 
-    // Add custom styles for maps and markers
-    const customStyles = document.createElement('style');
-    customStyles.textContent = `
-        #perizieMappa, #inspectionMap {
-            height: 400px;
-            width: 100%;
-        }
-        
-        .marker-pin {
-            width: 30px;
-            height: 30px;
-            border-radius: 50% 50% 50% 0;
-            position: relative;
-            transform: rotate(-45deg);
-            margin: -15px 0 0 -15px;
-        }
-        
-        .bg-green { background-color: #28a745; }
-        .bg-orange { background-color: #ffc107; }
-        .bg-blue { background-color: #3498db; }
-        
-        .loading-spinner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 5px;
-        }
-        
-        .map-popup h5 {
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-        
-        .map-popup p {
-            margin-bottom: 4px;
-            font-size: 14px;
-        }
-        
-        .avatar-circle {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        
-        @media (max-width: 768px) {
-            .avatar-circle {
-                width: 28px;
-                height: 28px;
-                font-size: 12px;
-            }
-        }
-    `;
-    document.head.appendChild(customStyles);
-
+    
+    
     // Verificare che il contenitore perizie-content esista, altrimenti crearlo
     if (!document.getElementById('perizie-content')) {
         const perizieContentDiv = document.createElement('div');
@@ -151,9 +90,7 @@ window.onload = function () {
                                     <label class="form-check-label" for="selectAllInspections">Seleziona tutti</label>
                                 </div>
                                 <div>
-                                    <button id="assignSelectedInspections" class="btn btn-sm btn-success me-2" disabled>
-                                        <i class="fas fa-user-tag me-1"></i>Assegna selezionate (0)
-                                    </button>
+                                    
                                     <button id="deleteSelectedInspections" class="btn btn-sm btn-danger" disabled>
                                         <i class="fas fa-trash me-1"></i>Elimina selezionate (0)
                                     </button>
@@ -262,7 +199,45 @@ window.onload = function () {
             return response.text();
         };
     }
-
+    function logout() {
+        // Clear user data
+        localStorage.removeItem("currentUser");
+        
+        // Hide all application content
+        document.getElementById("dashboardSection").classList.add("d-none");
+        document.getElementById("dashboardContent")?.classList.add("d-none");
+        document.getElementById("operatori-content")?.classList.add("d-none");
+        document.getElementById("perizie-content")?.classList.add("d-none");
+        
+        // Remove filter containers that might be floating
+        const filterContainers = document.querySelectorAll('.filter-container');
+        filterContainers.forEach(container => {
+            container.remove();
+        });
+        
+        // Ensure any modals are closed
+        if (window.bootstrap && window.bootstrap.Modal) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modalEl => {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            });
+        }
+        
+        // Show authentication section
+        document.getElementById("authSection").classList.remove("d-none");
+        
+        // Show login card and hide password change card
+        document.getElementById("loginCard").classList.remove("d-none");
+        document.getElementById("passwordChangeCard").classList.add("d-none");
+        
+        // Reset login form if it exists
+        const loginForm = document.getElementById("loginForm");
+        if (loginForm) loginForm.reset();
+    }
+    
+    // Replace the existing logout functionality with our enhanced version
+    
     async function login(username, password) {
         if (!username || !password) {
             if (window.Swal) {
@@ -530,19 +505,24 @@ window.onload = function () {
     async function loadDashboardData() {
         console.log("Loading dashboard data...");
         try {
-            await loadPerizie();
-            initDashboardMap();
+            const perizie = await loadPerizie();
+            
+            // Aggiorna le statistiche nella dashboard
+            updateDashboardStatistics(perizie);
+            
+            // Carica le perizie recenti nella dashboard
+            loadRecentPerizieDashboard(perizie);
         } catch (error) {
             console.error("Errore nel caricamento della dashboard:", error);
             if (window.Swal) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Errore',
-                    text: 'Si è verificato un errore nel caricamento dei dati della dashboard',
+                    text: 'Impossibile caricare i dati della dashboard',
                     confirmButtonColor: '#3085d6'
                 });
             } else {
-                alert('Si è verificato un errore nel caricamento dei dati della dashboard');
+                alert('Impossibile caricare i dati della dashboard');
             }
         }
     }
@@ -596,7 +576,7 @@ window.onload = function () {
     }
 
     // Function to load dashboard data
-    
+
 
     // Funzione per caricare le perizie dal server MongoDB
     async function loadPerizie() {
@@ -672,18 +652,18 @@ window.onload = function () {
     function loadRecentPerizieDashboard(perizie) {
         const tableBody = document.getElementById("inspectionTableBody");
         if (!tableBody) return;
-    
+
         // Svuota la tabella
         tableBody.innerHTML = '';
-    
+
         // Filtra perizie in attesa (non assegnate)
         const perizieInAttesa = perizie.filter(p => !p.operatoreId && !p.operatore);
-        
+
         // Ordina le perizie per data più recenti prima
         const sortedPerizie = perizieInAttesa
             .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
             .slice(0, 5); // Prendi solo le prime 5
-    
+
         if (sortedPerizie.length === 0) {
             tableBody.innerHTML = `
                 <tr>
@@ -692,11 +672,11 @@ window.onload = function () {
             `;
             return;
         }
-    
+
         sortedPerizie.forEach(perizia => {
             const row = document.createElement('tr');
-    
-            // Formatta la data in formato italiano
+        
+            // Format date
             const formattedDate = new Date(perizia.data).toLocaleString('it-IT', {
                 day: '2-digit',
                 month: '2-digit',
@@ -704,105 +684,232 @@ window.onload = function () {
                 hour: '2-digit',
                 minute: '2-digit'
             });
-    
-            // Calcola il numero di foto
+        
+            // Determine status badge - now considers operatoreId
+            const statusText = getStatusText(perizia.stato, perizia.operatoreId);
+            const statusBadgeColor = getStatusBadgeColor(perizia.stato, perizia.operatoreId);
+            const statusBadge = `<span class="badge bg-${statusBadgeColor}">${statusText}</span>`;
+        
+            // Count photos
             const numFoto = perizia.fotografie ? perizia.fotografie.length : 0;
-    
-            // Abbrevia la descrizione se troppo lunga
-            const shortDesc = perizia.descrizione && perizia.descrizione.length > 30
-                ? perizia.descrizione.substring(0, 30) + '...'
-                : (perizia.descrizione || 'N/D');
-    
+        
             row.innerHTML = `
+                <td>
+                    <div class="form-check">
+                        <input class="form-check-input inspection-select" type="checkbox" data-id="${perizia.id}">
+                    </div>
+                </td>
                 <td>${perizia.id}</td>
-                <td class="text-center"><span class="badge bg-secondary">In attesa</span></td>
+                <td>${perizia.operatore || 'N/D'}</td>
                 <td>${formattedDate}</td>
                 <td>${perizia.tipo || 'N/D'}</td>
-                <td>${perizia.posizione && perizia.posizione.indirizzo ? perizia.posizione.indirizzo.split(',')[0] : 'N/D'}</td>
-                <td>${shortDesc}</td>
-                <td>
-                    <button class="btn btn-sm btn-info view-inspection" data-id="${perizia.id}"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-sm btn-success assign-inspection-dashboard" data-id="${perizia.id}"><i class="fas fa-user-plus"></i></button>
+                <td>${perizia.posizione && perizia.posizione.indirizzo ? perizia.posizione.indirizzo : 'N/D'}</td>
+                <td>${statusBadge}</td>
+                <td>${numFoto}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-info view-inspection" data-id="${perizia.id}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-warning edit-inspection" data-id="${perizia.id}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-inspection" data-id="${perizia.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </td>
             `;
-    
+        
             tableBody.appendChild(row);
         });
-    
+
         // Aggiungi listener agli elementi appena creati
         document.querySelectorAll('.view-inspection').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 viewPerizia(this.getAttribute('data-id'));
             });
         });
-    
+
         // Aggiungi listener per assegnare perizia direttamente dalla dashboard
         document.querySelectorAll('.assign-inspection-dashboard').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const periziaId = this.getAttribute('data-id');
                 assignSinglePerizia(periziaId);
             });
         });
+        updateOperatoriInPerizia(perizie);
     }
-    document.addEventListener('DOMContentLoaded', function() {
+
+    // Funzione per popolare la lista degli operatori in perizia nella dashboard
+    function updateOperatoriInPerizia(perizie) {
+        // Trova il container della lista
+        const operatoriList = document.getElementById("operatoriInPeriziaList");
+        if (!operatoriList) return;
+    
+        // Svuota la lista
+        operatoriList.innerHTML = "";
+    
+        // Filtra solo le perizie effettivamente assegnate e in corso
+        const perizieAssegnate = perizie.filter(p => {
+            // Verifica che ci sia un operatore assegnato E che la perizia sia attiva
+            return (p.operatoreId || p.operatore) && 
+                   (p.stato === 'in_progress' || p.stato === 'scheduled' || !p.stato);
+        });
+    
+        // Crea una mappa degli operatori con le loro perizie
+        const operatoriMap = new Map();
+        perizieAssegnate.forEach(p => {
+            const operatoreId = p.operatoreId || "unknown";
+            // Verifica che l'operatore esista veramente
+            if (operatoreId && operatoreId !== "unknown") {
+                const operatoreNome = p.operatore || "Operatore sconosciuto";
+                
+                if (!operatoriMap.has(operatoreId)) {
+                    operatoriMap.set(operatoreId, {
+                        id: operatoreId,
+                        nome: operatoreNome,
+                        perizie: []
+                    });
+                }
+                
+                operatoriMap.get(operatoreId).perizie.push(p);
+            }
+        });
+    
+        // Aggiorna il contatore nel badge
+        const countBadge = document.getElementById("operatoriInPeriziaCount");
+        if (countBadge) {
+            countBadge.textContent = operatoriMap.size;
+        }
+    
+        // Se non ci sono operatori con perizie
+        if (operatoriMap.size === 0) {
+            operatoriList.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="fas fa-info-circle me-2 text-muted"></i>
+                    <span class="text-muted">Nessun operatore con perizie assegnate</span>
+                </div>
+            `;
+            return;
+        }
+    
+        // Converti la mappa in array e ordina per numero di perizie (decrescente)
+        const operatoriArray = Array.from(operatoriMap.values())
+            .filter(op => op.perizie.length > 0)  // Ulteriore filtro per sicurezza
+            .sort((a, b) => b.perizie.length - a.perizie.length);
+    
+        // Mostra massimo 5 operatori
+        const topOperatori = operatoriArray.slice(0, 5);
+        
+        // Crea gli elementi della lista
+        topOperatori.forEach(operatore => {
+            // Estrai le iniziali per l'avatar
+            const nomiParts = operatore.nome.split(' ');
+            let initials = '';
+            if (nomiParts.length >= 2) {
+                initials = `${nomiParts[0].charAt(0)}${nomiParts[1].charAt(0)}`;
+            } else {
+                initials = operatore.nome.substring(0, 2);
+            }
+            initials = initials.toUpperCase();
+            
+            // Genera un colore per l'avatar basato sull'ID operatore
+            const avatarColor = getAvatarColor(operatore.id);
+            
+            // Crea l'elemento della lista
+            const listItem = document.createElement('div');
+            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            listItem.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle ${avatarColor} text-white me-3" style="width: 35px; height: 35px; font-size: 14px; display: flex; align-items: center; justify-content: center;">${initials}</div>
+                    <div>
+                        <h6 class="mb-0">${operatore.nome}</h6>
+                        <small class="text-muted">Perizie: ${operatore.perizie.length}</small>
+                    </div>
+                </div>
+                <span class="badge bg-warning rounded-pill">${operatore.perizie.length}</span>
+            `;
+            
+            operatoriList.appendChild(listItem);
+        });
+    }
+    
+    // Aggiungi questa funzione se non esiste già
+    function getAvatarColor(id) {
+        // Array di classi di colori Bootstrap
+        const colorClasses = [
+            "bg-primary", "bg-success", "bg-danger", "bg-warning", "bg-info",
+            "bg-secondary", "bg-dark"
+        ];
+        
+        // Genera un indice basato sull'ID
+        let hash = 0;
+        for (let i = 0; i < id.length; i++) {
+            hash = id.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        // Seleziona un colore dall'array
+        const index = Math.abs(hash) % colorClasses.length;
+        return colorClasses[index];
+    }
+    document.addEventListener('DOMContentLoaded', function () {
         const manageUsersBtn = document.querySelector('.btn-manage-users, #manageUsersBtn, [data-action="manage-users"]');
         if (manageUsersBtn) {
-            manageUsersBtn.addEventListener('click', function(e) {
+            manageUsersBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                
+
                 // Nascondi altre sezioni
                 document.getElementById('dashboardContent')?.classList.add('d-none');
                 document.getElementById('perizie-content')?.classList.add('d-none');
-                
+
                 // Mostra la sezione operatori
                 const operatoriContent = document.getElementById('operatori-content');
                 if (operatoriContent) {
                     operatoriContent.classList.remove('d-none');
-                    
+
                     // Inizializza la sezione operatori
                     initOperatoriPage();
                 }
-                
+
                 // Aggiorna active state nel menu
                 document.querySelectorAll('.nav-link').forEach(link => {
                     link.classList.remove('active');
                 });
-                
+
                 document.querySelector('a[href="#operatori"]')?.classList.add('active');
             });
         }
     });
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Cambia il titolo della sezione da "Perizie Recenti" a "Nuove Perizie"
         const recentPerizieTitle = document.querySelector('.card-header h5, .card-header .h5');
         if (recentPerizieTitle && recentPerizieTitle.textContent === "Perizie Recenti") {
             recentPerizieTitle.textContent = "Nuove Perizie";
         }
     });
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const manageUsersBtn = document.querySelector('.btn-manage-users, #manageUsersBtn, [data-action="manage-users"]');
         if (manageUsersBtn) {
-            manageUsersBtn.addEventListener('click', function(e) {
+            manageUsersBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                
+
                 // Nascondi altre sezioni
                 document.getElementById('dashboardContent')?.classList.add('d-none');
                 document.getElementById('perizie-content')?.classList.add('d-none');
-                
+
                 // Mostra la sezione operatori
                 const operatoriContent = document.getElementById('operatori-content');
                 if (operatoriContent) {
                     operatoriContent.classList.remove('d-none');
-                    
+
                     // Inizializza la sezione operatori
                     initOperatoriPage();
                 }
-                
+
                 // Aggiorna active state nel menu
                 document.querySelectorAll('.nav-link').forEach(link => {
                     link.classList.remove('active');
                 });
-                
+
                 document.querySelector('a[href="#operatori"]')?.classList.add('active');
             });
         }
@@ -867,6 +974,28 @@ window.onload = function () {
         const userData = JSON.parse(localStorage.getItem("currentUser"));
         return userData && userData.role === 'admin';
     }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Migliora il comportamento del toggler navbar
+        const navbarToggler = document.querySelector('.navbar-toggler');
+        const navbarCollapse = document.querySelector('.navbar-collapse');
+        
+        if (navbarToggler && navbarCollapse) {
+          navbarToggler.addEventListener('click', function() {
+            // Attende che il collasso sia completato prima di aggiustare layout
+            setTimeout(function() {
+              // Assicurati che gli elementi utente siano visibili e ben posizionati
+              const userInfoContainer = document.querySelector('.user-info-container');
+              if (userInfoContainer) {
+                if (navbarCollapse.classList.contains('show')) {
+                  userInfoContainer.style.marginTop = '10px';
+                } else {
+                  userInfoContainer.style.marginTop = '0';
+                }
+              }
+            }, 350);
+          });
+        }
+      });
 
     // Funzione per verificare i permessi prima di eseguire un'azione riservata agli admin
     function checkAdminPermission() {
@@ -888,12 +1017,12 @@ window.onload = function () {
     async function assignSinglePerizia(periziaId) {
         try {
             if (!checkAdminPermission()) return;
-            
+
             const perizia = window.perizie.find(p => p.id === periziaId);
             if (!perizia) {
                 throw new Error('Perizia non trovata');
             }
-            
+
             if (perizia.operatoreId || perizia.operatore) {
                 if (window.Swal) {
                     Swal.fire({
@@ -904,11 +1033,11 @@ window.onload = function () {
                 }
                 return;
             }
-            
+
             // Recupera gli operatori
             const operatori = await inviaRichiesta("GET", "/api/users");
             const operatoriAttivi = operatori.filter(op => op.role !== 'admin');
-            
+
             if (operatoriAttivi.length === 0) {
                 if (window.Swal) {
                     Swal.fire({
@@ -919,12 +1048,12 @@ window.onload = function () {
                 }
                 return;
             }
-            
+
             // Crea le opzioni per il select
-            const operatoriOptions = operatoriAttivi.map(op => 
+            const operatoriOptions = operatoriAttivi.map(op =>
                 `<option value="${op.username}">${op.firstName || ''} ${op.lastName || ''} (${op.username})</option>`
             ).join('');
-            
+
             // Mostra il dialog di selezione operatore
             if (window.Swal) {
                 const result = await Swal.fire({
@@ -948,11 +1077,11 @@ window.onload = function () {
                         return operatorId;
                     }
                 });
-                
+
                 if (result.isConfirmed && result.value) {
                     const operatoreId = result.value;
                     const operatore = operatori.find(op => op.username === operatoreId);
-                    
+
                     // Mostra il loader
                     Swal.fire({
                         title: 'Assegnazione in corso...',
@@ -962,22 +1091,22 @@ window.onload = function () {
                             Swal.showLoading();
                         }
                     });
-                    
+
                     // Prepara i dati per l'aggiornamento
                     const updateData = {
                         operatoreId: operatore.username,
                         operatore: `${operatore.firstName || ''} ${operatore.lastName || ''}`.trim() || operatore.username
                     };
-                    
+
                     // Aggiorna la perizia
                     await inviaRichiesta("PATCH", `/api/perizie/${periziaId}`, updateData);
-                    
+
                     // Aggiorna i dati locali
                     await loadPerizie();
-                    
+
                     // Aggiorna l'interfaccia utente
                     loadRecentPerizieDashboard(window.perizie);
-                    
+
                     // Mostra messaggio di successo
                     Swal.fire({
                         icon: 'success',
@@ -999,7 +1128,7 @@ window.onload = function () {
     }
 
     // Funzione per modificare una perizia
-    
+
 
     // Set up event listeners for the navigation links
     const perizieNavLink = document.querySelector('a[href="#perizie"]');
@@ -1063,73 +1192,75 @@ window.onload = function () {
     }
 
     // Funzioni per la sezione perizie
-    async function initPeriziePage() {
-        console.log("Inizializzazione sezione perizie");
-
-        // Assicurati che il container perizie-content sia visibile
-        const perizieContent = document.getElementById('perizie-content');
-        if (perizieContent) {
-            perizieContent.classList.remove('d-none');
-        } else {
-            console.error("Container perizie-content non trovato");
-            return;
+    // Function to initialize the perizie page with the new workflow
+async function initPeriziePage() {
+    console.log("Inizializzazione pagina perizie...");
+    
+    // Create perizie table if it doesn't exist
+    if (!document.getElementById('perizieTable')) {
+        createPerizieTable();
+    }
+    
+    // Add "Create New Perizia" button if it doesn't exist
+    if (!document.getElementById('createNewPerizia')) {
+        const buttonContainer = document.querySelector('.perizie-filters');
+        if (buttonContainer) {
+            const createButton = document.createElement('button');
+            createButton.id = 'createNewPerizia';
+            createButton.className = 'btn btn-success ms-2';
+            createButton.innerHTML = '<i class="fas fa-plus me-1"></i>Nuova Perizia';
+            createButton.addEventListener('click', createNewPerizia);
+            buttonContainer.appendChild(createButton);
         }
+    }
+    
+    // Load perizie from the server
+    await loadPerizie();
+    
+    // Initialize map
+    initPerizieMappa();
+    
+    // Load perizie into table
+    loadPerizieTable();
+    
+    // Update counters
+    updatePerizieCounts();
+    
+    // Initialize filter listeners
+    initFilterListeners();
+}
+    function updateDashboardStatistics(perizie) {
+        // Totale perizie
+        const totalElement = document.getElementById("totalInspections");
+        if (totalElement) totalElement.textContent = perizie.length;
 
-        // Implementazione della funzione setupPerizieButtons
-        setupPerizieButtons();
+        // Operatori attivi (operatori con almeno una perizia in corso)
+        const perizieInCorso = perizie.filter(p => p.stato === "in_progress");
+        const operatoriAttivi = [...new Set(perizieInCorso.map(p => p.operatoreId))].filter(Boolean);
+        const activeElement = document.getElementById("activeUsers");
+        if (activeElement) activeElement.textContent = operatoriAttivi.length;
 
-        // Carica le perizie se non sono state già caricate
-        if (!window.perizie) {
-            try {
-                await loadPerizie();
-            } catch (error) {
-                console.error("Errore nel caricamento perizie:", error);
-                if (window.Swal) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Errore',
-                        text: 'Impossibile caricare le perizie',
-                        confirmButtonColor: '#3085d6'
-                    });
-                } else {
-                    alert('Impossibile caricare le perizie');
-                }
-                return;
-            }
-        }
-
-        // Verifica che perizie sia stato caricato correttamente
-        if (!window.perizie || !Array.isArray(window.perizie)) {
-            console.error("Perizie non caricate correttamente:", window.perizie);
-            window.perizie = [];
-        }
-
-        console.log("Perizie caricate, inizializzazione mappa");
-
-        // Inizializza la mappa delle perizie
-        initPerizieMappa();
-
-        // Prima controlla che la tabella esista
-        const tableExists = document.querySelector('#perizie-content table');
-        if (!tableExists) {
-            console.log("Tabella perizie non trovata, creazione...");
-            createPerizieTable();
-        }
-
-        // Carica la tabella delle perizie
-        console.log("Caricamento tabella perizie...");
-        loadPerizieTable();
-
-        // Aggiorna i contatori
-        updatePerizieCounts();
-
-        // Inizializza i filtri con gli operatori disponibili
-        populateOperatorFilter();
-
-        // Inizializza i listener per i filtri
-        initFilterListeners();
+        // Perizie in attesa (non assegnate)
+        const perizieInAttesa = perizie.filter(p => !p.operatoreId && !p.operatore).length;
+        const pendingElement = document.getElementById("pendingInspections");
+        if (pendingElement) pendingElement.textContent = perizieInAttesa;
     }
 
+    function updateDashboardStatistics(perizie) {
+        // Totale perizie
+        const totalElement = document.getElementById("totalInspections");
+        if (totalElement) totalElement.textContent = perizie.length;
+
+        // Operatori attivi (conteggio unico degli operatori)
+        const operatoriUnici = [...new Set(perizie.map(p => p.operatoreId))].filter(Boolean);
+        const activeElement = document.getElementById("activeUsers");
+        if (activeElement) activeElement.textContent = operatoriUnici.length;
+
+        // Perizie in attesa (non assegnate)
+        const perizieInAttesa = perizie.filter(p => !p.operatoreId && !p.operatore).length;
+        const pendingElement = document.getElementById("pendingInspections");
+        if (pendingElement) pendingElement.textContent = perizieInAttesa;
+    }
     // Nuova funzione per creare la tabella delle perizie se non esiste
     function createPerizieTable() {
         const perizieContent = document.getElementById('perizie-content');
@@ -1170,92 +1301,108 @@ window.onload = function () {
     // Funzione per inizializzare la mappa delle perizie
     function initPerizieMappa() {
         console.log("Inizializzazione mappa perizie");
-
+    
         // Verifica che Leaflet sia caricato e che il container della mappa esista
         if (typeof L === 'undefined') {
             console.error("Leaflet non è disponibile");
             return;
         }
-
+    
         const mappaContainer = document.getElementById('perizieMappa');
         if (!mappaContainer) {
             console.error("Container mappa non esiste nel DOM");
             return;
         }
-
-        // Verifica che perizie siano caricate
-        if (!window.perizie || window.perizie.length === 0) {
-            console.warn("Nessuna perizia disponibile per la mappa");
-            mappaContainer.innerHTML = '<div class="alert alert-info">Nessuna perizia disponibile</div>';
-            return;
-        }
-
-        console.log(`Inizializzazione mappa con ${window.perizie.length} perizie`);
-
+    
         try {
             // Elimina la mappa esistente se presente
             if (window.perizieMap) {
                 window.perizieMap.remove();
             }
-
-            // Centro Italia come posizione di default
-            const italyCoords = [41.9028, 12.4964];
-
-            // Inizializza la mappa
-            window.perizieMap = L.map('perizieMappa').setView(italyCoords, 6);
-
+    
+            // Coordinate di Bra, Italia come posizione della sede aziendale
+            const sedeCoords = [44.7005, 7.8472];
+    
+            // Inizializza la mappa centrata su Bra con zoom appropriato per la città
+            window.perizieMap = L.map('perizieMappa').setView(sedeCoords, 13);
+    
             // Aggiungi il layer di OpenStreetMap
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(window.perizieMap);
-
+    
             // Aggiorna le dimensioni della mappa
             setTimeout(() => {
                 if (window.perizieMap) {
                     window.perizieMap.invalidateSize();
                 }
             }, 300);
-
+    
+            // Aggiungi marker per la sede dell'azienda con stile personalizzato
+            const sedeMarker = L.marker(sedeCoords, {
+                icon: L.divIcon({
+                    className: 'sede-marker',
+                    html: `<div style="background-color: #e74c3c; width: 24px; height: 24px; border-radius: 50%; 
+                           border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            }).addTo(window.perizieMap);
+    
+            // Aggiungi popup informativo sulla sede che si apre automaticamente
+            sedeMarker.bindPopup(`
+                <div class="map-popup">
+                    <h5><i class="fas fa-building me-2"></i>Sede Aziendale</h5>
+                    <p><strong>Indirizzo:</strong> Via Roma 123, Bra (CN)</p>
+                    <p><strong>Telefono:</strong> +39 0172 123456</p>
+                    <p class="small text-muted mb-0">Sede centrale operativa</p>
+                </div>
+            `).openPopup();
+    
             // Aggiungi marker per ogni perizia
-            const markers = [];
-            const showOnlyActiveCheckbox = document.getElementById('showOnlyActiveInspections');
-            const showOnlyActive = showOnlyActiveCheckbox ? showOnlyActiveCheckbox.checked : false;
-
-            window.perizie.forEach(perizia => {
-                // Se l'opzione "solo perizie attive" è selezionata, filtra per stato
-                if (showOnlyActive && perizia.stato !== 'pending' && perizia.stato !== 'in_progress') {
-                    return;
-                }
-
-                // Verifica che la perizia abbia coordinate valide
-                if (perizia.posizione && perizia.posizione.lat && perizia.posizione.lng) {
-                    // Crea il marker
-                    const marker = L.marker([perizia.posizione.lat, perizia.posizione.lng]).addTo(window.perizieMap);
-
-                    // Aggiungi popup con informazioni
-                    marker.bindPopup(`
-                        <div class="map-popup">
-                            <h5>${perizia.id}</h5>
-                            <p><strong>Operatore:</strong> ${perizia.operatore || 'N/D'}</p>
-                            <p><strong>Indirizzo:</strong> ${perizia.posizione.indirizzo || 'N/D'}</p>
-                            <div class="text-center mt-2">
-                                <button class="btn btn-sm btn-primary view-perizia-map" data-id="${perizia.id}">
-                                    <i class="fas fa-eye me-1"></i> Dettagli
-                                </button>
+            const markers = [sedeMarker]; // Inizia l'array con il marker della sede
+    
+            // Verifica che perizie sia stato caricato
+            if (window.perizie && window.perizie.length > 0) {
+                const showOnlyActiveCheckbox = document.getElementById('showOnlyActiveInspections');
+                const showOnlyActive = showOnlyActiveCheckbox ? showOnlyActiveCheckbox.checked : false;
+    
+                window.perizie.forEach(perizia => {
+                    // Se l'opzione "solo perizie attive" è selezionata, filtra per stato
+                    if (showOnlyActive && perizia.stato !== 'pending' && perizia.stato !== 'in_progress') {
+                        return;
+                    }
+    
+                    // Verifica che la perizia abbia coordinate valide
+                    if (perizia.posizione && perizia.posizione.lat && perizia.posizione.lng) {
+                        // Crea il marker
+                        const marker = L.marker([perizia.posizione.lat, perizia.posizione.lng]).addTo(window.perizieMap);
+    
+                        // Aggiungi popup con informazioni
+                        marker.bindPopup(`
+                            <div class="map-popup">
+                                <h5>${perizia.id}</h5>
+                                <p><strong>Operatore:</strong> ${perizia.operatore || 'N/D'}</p>
+                                <p><strong>Indirizzo:</strong> ${perizia.posizione.indirizzo || 'N/D'}</p>
+                                <div class="text-center mt-2">
+                                    <button class="btn btn-sm btn-primary view-perizia-map" data-id="${perizia.id}">
+                                        <i class="fas fa-eye me-1"></i> Dettagli
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    `);
-
-                    markers.push(marker);
+                        `);
+    
+                        markers.push(marker);
+                    }
+                });
+    
+                // Se ci sono marker oltre alla sede, adatta la vista per mostrarli tutti
+                if (markers.length > 1) {
+                    const group = new L.featureGroup(markers);
+                    window.perizieMap.fitBounds(group.getBounds(), { padding: [50, 50] });
                 }
-            });
-
-            // Se ci sono marker, adatta la vista per mostrarli tutti
-            if (markers.length > 0) {
-                const group = new L.featureGroup(markers);
-                window.perizieMap.fitBounds(group.getBounds(), { padding: [50, 50] });
             }
-
+    
             // Aggiungi listener per la vista dei dettagli della perizia
             window.perizieMap.on('popupopen', function () {
                 document.querySelectorAll('.view-perizia-map').forEach(btn => {
@@ -1265,6 +1412,7 @@ window.onload = function () {
                     });
                 });
             });
+    
         } catch (error) {
             console.error("Errore nell'inizializzazione della mappa:", error);
             mappaContainer.innerHTML = `
@@ -1319,83 +1467,59 @@ window.onload = function () {
     function initFilterListeners() {
         const applyFilters = document.getElementById('applyFilters');
         const resetFilters = document.getElementById('resetFilters');
+
+        // Removed state filter code here
         
-        // Aggiungi il filtro per stato se non esiste
-        if (!document.getElementById('filterStato')) {
-            const filterContainer = document.querySelector('.filter-container') || document.createElement('div');
-            if (!filterContainer.classList.contains('filter-container')) {
-                filterContainer.classList.add('filter-container', 'mb-3');
-                const cardBody = document.querySelector('.card-body');
-                if (cardBody) {
-                    cardBody.insertBefore(filterContainer, cardBody.firstChild);
-                }
-            }
-            
-            // Aggiungi il filtro stato
-            const filterStateGroup = document.createElement('div');
-            filterStateGroup.className = 'mb-3';
-            filterStateGroup.innerHTML = `
-                <label for="filterStato" class="form-label">Filtra per stato</label>
-                <select class="form-select" id="filterStato">
-                    <option value="">Tutti gli stati</option>
-                    <option value="waiting">In attesa</option>
-                    <option value="executing">In esecuzione</option>
-                    <option value="completed">Completate</option>
-                </select>
-            `;
-            filterContainer.appendChild(filterStateGroup);
-        }
-    
         if (applyFilters) {
-            applyFilters.addEventListener('click', function() {
+            applyFilters.addEventListener('click', function () {
                 applyFiltersToPerizie();
             });
         }
-    
+
         if (resetFilters) {
-            resetFilters.addEventListener('click', function() {
+            resetFilters.addEventListener('click', function () {
                 // Reset filtri
                 const filterOperator = document.getElementById('filterOperator');
                 const filterDate = document.getElementById('filterDate');
-                const filterStato = document.getElementById('filterStato');
-                
+                // State filter reference removed
+
                 if (filterOperator) filterOperator.value = '';
                 if (filterDate) filterDate.value = '';
-                if (filterStato) filterStato.value = '';
-    
+                // State filter reset removed
+
                 // Ricarica tutte le perizie
                 loadPerizieTable();
             });
         }
-        
-        // Event listener per i filtri individuali
-        document.getElementById('filterStato')?.addEventListener('change', applyFiltersToPerizie);
+
+        // Event listener for individual filters
         document.getElementById('filterOperator')?.addEventListener('change', applyFiltersToPerizie);
         document.getElementById('filterDate')?.addEventListener('change', applyFiltersToPerizie);
+        // State filter event listener removed
     }
-    
+
     // Funzione aggiornata per applicare filtri alle perizie
     function applyFiltersToPerizie() {
         if (!window.perizie) return;
-    
+
         const filterOperator = document.getElementById('filterOperator');
         const filterDate = document.getElementById('filterDate');
-        const filterStato = document.getElementById('filterStato');
-    
+        // State filter reference removed
+
         let filteredPerizie = [...window.perizie];
-    
+
         // Filtra per operatore se selezionato
         if (filterOperator && filterOperator.value) {
             filteredPerizie = filteredPerizie.filter(p =>
                 p.operatore && p.operatore.includes(filterOperator.value)
             );
         }
-    
+
         // Filtra per data se selezionata
         if (filterDate && filterDate.value) {
             const selectedDate = new Date(filterDate.value);
             selectedDate.setHours(0, 0, 0, 0);
-    
+
             filteredPerizie = filteredPerizie.filter(p => {
                 if (!p.data) return false;
                 const periziaDate = new Date(p.data);
@@ -1403,33 +1527,18 @@ window.onload = function () {
                 return periziaDate.getTime() === selectedDate.getTime();
             });
         }
-        
-        // Filtra per stato se selezionato
-        if (filterStato && filterStato.value) {
-            switch(filterStato.value) {
-                case 'waiting':
-                    filteredPerizie = filteredPerizie.filter(p => !p.operatoreId && !p.operatore);
-                    break;
-                case 'executing':
-                    filteredPerizie = filteredPerizie.filter(p => p.operatoreId || p.operatore);
-                    break;
-                case 'completed':
-                    filteredPerizie = filteredPerizie.filter(p => p.stato === 'completed');
-                    break;
-            }
-        }
-    
+
+        // State filter handling removed
+
         // Aggiorna il contatore delle visualizzate
         const visualizzateElement = document.getElementById('perizieVisualizzate');
         if (visualizzateElement) {
             visualizzateElement.textContent = filteredPerizie.length;
         }
-    
+
         // Carica la tabella con le perizie filtrate
         loadPerizieTable(filteredPerizie);
     }
-    
-    // Funzione aggiornata per applicare filtri alle perizie
 
 
     // Funzione per eliminare perizie dal database
@@ -1509,6 +1618,439 @@ window.onload = function () {
         });
         updateSelectedCount();
     }
+    // Aggiungere questo codice alla fine del file, prima della chiusura della funzione window.onload
+
+    // Funzione per gestire il click su "Vedi Tutte" nelle perizie in corso
+    document.addEventListener('DOMContentLoaded', function () {
+        // Gestione pulsante "Vedi Tutte" delle perizie in corso
+        const vediTutteBtn = document.querySelector('.card-header.bg-warning + .card-body + .card-footer .btn-outline-warning');
+        if (vediTutteBtn) {
+            vediTutteBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                mostrarePerizieCorseSweetAlert();
+            });
+        }
+
+        // Cambia il titolo della card degli operatori attivi
+        const operatoriAttiviTitle = document.querySelector('.card-header.bg-success .d-flex div');
+        if (operatoriAttiviTitle && operatoriAttiviTitle.textContent.includes('Operatori Attivi')) {
+            operatoriAttiviTitle.innerHTML = '<i class="fas fa-user-check me-2"></i>Operatori in Perizia';
+        }
+
+        // Gestione pulsante "Gestisci operatori"
+        const gestisciOperatoriBtn = document.querySelector('[data-action="manage-users"], .btn-manage-users');
+        if (gestisciOperatoriBtn) {
+            gestisciOperatoriBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // Nascondi altre sezioni
+                document.getElementById('dashboardContent')?.classList.add('d-none');
+                document.getElementById('perizie-content')?.classList.add('d-none');
+
+                // Mostra la sezione operatori
+                const operatoriContent = document.getElementById('operatori-content');
+                if (operatoriContent) {
+                    operatoriContent.classList.remove('d-none');
+
+                    // Inizializza la sezione operatori
+                    initOperatoriPage();
+                }
+
+                // Aggiorna active state nel menu
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+
+                document.querySelector('a[href="#operatori"]')?.classList.add('active');
+            });
+        }
+    });
+
+    // Funzione per mostrare le perizie in corso nella SweetAlert
+    function mostrarePerizieCorseSweetAlert() {
+        // Verificare che le perizie siano caricate
+        if (!window.perizie || !Array.isArray(window.perizie)) {
+            console.error("Perizie non disponibili");
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Informazione',
+                    text: 'Nessuna perizia disponibile al momento.'
+                });
+            }
+            return;
+        }
+
+        // Filtra solo le perizie assegnate (che hanno operatoreId o operatore)
+        const perizieAssegnate = window.perizie.filter(p => p.operatoreId || p.operatore);
+
+        if (perizieAssegnate.length === 0) {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Informazione',
+                    text: 'Non ci sono perizie assegnate al momento.'
+                });
+            }
+            return;
+        }
+
+        // Ordina per data più recente
+        const perizieSorted = [...perizieAssegnate].sort((a, b) =>
+            new Date(b.data).getTime() - new Date(a.data).getTime()
+        );
+
+        // Prepara l'HTML per la tabella delle perizie
+        let tableHTML = `
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Operatore</th>
+                        <th>Data</th>
+                        <th>Tipo</th>
+                        <th>Indirizzo</th>
+                        <th>Stato</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+        perizieSorted.forEach(perizia => {
+            const formattedDate = new Date(perizia.data).toLocaleString('it-IT', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const statusText = getStatusText(perizia.stato, perizia.operatoreId);
+            const statusBadgeColor = getStatusBadgeColor(perizia.stato, perizia.operatoreId);
+
+            tableHTML += `
+            <tr>
+                <td>${perizia.id}</td>
+                <td>${perizia.operatore || 'N/D'}</td>
+                <td>${formattedDate}</td>
+                <td>${perizia.tipo || 'N/D'}</td>
+                <td>${perizia.posizione && perizia.posizione.indirizzo ? perizia.posizione.indirizzo.split(',')[0] : 'N/D'}</td>
+                <td><span class="badge bg-${statusBadgeColor}">${statusText}</span></td>
+            </tr>
+        `;
+        });
+
+        tableHTML += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+        // Mostra la SweetAlert con le perizie
+        if (window.Swal) {
+            Swal.fire({
+                title: 'Perizie in Corso',
+                html: tableHTML,
+                width: 900,
+                confirmButtonText: 'Chiudi',
+                confirmButtonColor: '#3085d6'
+            });
+        }
+    }
+    // Add event listener for the "Visualizza Operatori" button
+    document.getElementById("visualizzaOperatori")?.addEventListener("click", function() {
+        // Hide other sections first
+        document.getElementById('dashboardContent')?.classList.add('d-none');
+        document.getElementById('perizie-content')?.classList.add('d-none');
+        
+        // Show operators section and initialize it
+        const operatoriContent = document.getElementById('operatori-content');
+        if (operatoriContent) {
+            operatoriContent.classList.remove('d-none');
+            
+            // Initialize the operators page
+            initOperatoriPage();
+            
+            // Update active state in navbar
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector('a[href="#operatori"]')?.classList.add('active');
+        }
+    });
+
+    // Aggiungere questo codice alla fine del file, prima della chiusura della funzione window.onload
+
+// Funzione per gestire il click su "Vedi Tutte" nelle perizie in corso
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestione pulsante "Vedi Tutte" delle perizie in corso
+    const vediTutteBtn = document.querySelector('.card-header.bg-warning + .card-body + .card-footer .btn-outline-warning');
+    if (vediTutteBtn) {
+        vediTutteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            mostrarePerizieCorseSweetAlert();
+        });
+    }
+    
+    // Cambia il titolo della card degli operatori attivi
+    const operatoriAttiviTitle = document.querySelector('.card-header.bg-success .d-flex div');
+    if (operatoriAttiviTitle && operatoriAttiviTitle.textContent.includes('Operatori Attivi')) {
+        operatoriAttiviTitle.innerHTML = '<i class="fas fa-user-check me-2"></i>Operatori in Perizia';
+    }
+    
+    // Gestione pulsante "Gestisci operatori"
+    const gestisciOperatoriBtn = document.querySelector('[data-action="manage-users"], .btn-manage-users');
+    if (gestisciOperatoriBtn) {
+        gestisciOperatoriBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Nascondi altre sezioni
+            document.getElementById('dashboardContent')?.classList.add('d-none');
+            document.getElementById('perizie-content')?.classList.add('d-none');
+            
+            // Mostra la sezione operatori
+            const operatoriContent = document.getElementById('operatori-content');
+            if (operatoriContent) {
+                operatoriContent.classList.remove('d-none');
+                
+                // Inizializza la sezione operatori
+                initOperatoriPage();
+            }
+            
+            // Aggiorna active state nel menu
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            document.querySelector('a[href="#operatori"]')?.classList.add('active');
+        });
+    }
+});
+
+// Funzione per mostrare le perizie in corso nella SweetAlert
+function mostrarePerizieCorseSweetAlert() {
+    // Verificare che le perizie siano caricate
+    if (!window.perizie || !Array.isArray(window.perizie)) {
+        console.error("Perizie non disponibili");
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Informazione',
+                text: 'Nessuna perizia disponibile al momento.'
+            });
+        }
+        return;
+    }
+    
+    // Filtra solo le perizie assegnate (che hanno operatoreId o operatore)
+    const perizieAssegnate = window.perizie.filter(p => p.operatoreId || p.operatore);
+    
+    if (perizieAssegnate.length === 0) {
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Informazione',
+                text: 'Non ci sono perizie assegnate al momento.'
+            });
+        }
+        return;
+    }
+    
+    // Ordina per data più recente
+    const perizieSorted = [...perizieAssegnate].sort((a, b) => 
+        new Date(b.data).getTime() - new Date(a.data).getTime()
+    );
+    
+    // Prepara l'HTML per la tabella delle perizie
+    let tableHTML = `
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Operatore</th>
+                        <th>Data</th>
+                        <th>Tipo</th>
+                        <th>Indirizzo</th>
+                        <th>Stato</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    perizieSorted.forEach(perizia => {
+        const formattedDate = new Date(perizia.data).toLocaleString('it-IT', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const statusText = getStatusText(perizia.stato, perizia.operatoreId);
+        const statusBadgeColor = getStatusBadgeColor(perizia.stato, perizia.operatoreId);
+        
+        tableHTML += `
+            <tr>
+                <td>${perizia.id}</td>
+                <td>${perizia.operatore || 'N/D'}</td>
+                <td>${formattedDate}</td>
+                <td>${perizia.tipo || 'N/D'}</td>
+                <td>${perizia.posizione && perizia.posizione.indirizzo ? perizia.posizione.indirizzo.split(',')[0] : 'N/D'}</td>
+                <td><span class="badge bg-${statusBadgeColor}">${statusText}</span></td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    // Mostra la SweetAlert con le perizie
+    if (window.Swal) {
+        Swal.fire({
+            title: 'Perizie in Corso',
+            html: tableHTML,
+            width: 900,
+            confirmButtonText: 'Chiudi',
+            confirmButtonColor: '#3085d6'
+        });
+    }
+}
+
+// Modifica alla funzione displayOperatori per mostrare solo operatori con perizie in corso
+function displayOperatori(operatori) {
+    const cardsContainer = document.getElementById('operatori-cards');
+    if (!cardsContainer) return;
+    
+    // Svuota il contenitore
+    cardsContainer.innerHTML = '';
+    
+    // Verifica se l'utente è admin per aggiungere la card "+"
+    const isAdmins = isUserAdmin();
+    
+    // Se l'utente è admin, aggiungi la card per nuovo operatore
+    if (isAdmins) {
+        const addCard = document.createElement('div');
+        addCard.className = 'col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4';
+        addCard.innerHTML = `
+            <div class="card h-100 shadow-sm add-operator-card" style="cursor: pointer; border: 2px dashed #ccc;">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center" onclick="addOperatore()">
+                    <div class="add-operator-icon mb-3">
+                        <i class="fas fa-plus-circle" style="font-size: 48px; color: #28a745;"></i>
+                    </div>
+                    <h5 class="card-title text-center">Aggiungi Nuovo Operatore</h5>
+                    <p class="card-text text-muted text-center">Clicca per aggiungere un nuovo operatore</p>
+                </div>
+            </div>
+        `;
+        cardsContainer.appendChild(addCard);
+    }
+    
+    // Verifico quali operatori hanno perizie assegnate
+    const perizie = window.perizie || [];
+    
+    // Filtra solo gli operatori che hanno perizie in corso
+    let operatoriFiltrati = operatori;
+    if (perizie.length > 0) {
+        // Identifica gli operatori che hanno almeno una perizia
+        const operatoriConPerizie = new Set(perizie
+            .filter(p => p.operatoreId || p.operatore)
+            .map(p => p.operatoreId || (p.operatore ? p.operatore.split(' ')[0] : null))
+            .filter(Boolean)
+        );
+        
+        // Filtra gli operatori che hanno perizie
+        operatoriFiltrati = operatori.filter(op => operatoriConPerizie.has(op.username));
+    }
+    
+    // Verifica se ci sono operatori dopo il filtro
+    if (!operatoriFiltrati || operatoriFiltrati.length === 0) {
+        cardsContainer.innerHTML += `
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>Nessun operatore con perizie in corso.
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Verifico se l'utente loggato è amministratore
+    const isAdmin = isUserAdmin();
+    
+    // Crea una card per ogni operatore
+    operatoriFiltrati.forEach(operatore => {
+        // Controlla se l'operatore ha perizie assegnate
+        const perizieAssegnate = perizie.filter(p => 
+            p.operatoreId === operatore.username || 
+            p.operatore === operatore.username ||
+            (p.operatore && p.operatore.includes(operatore.username))
+        );
+        
+        // Generate initials for avatar
+        const initials = getOperatorInitials(operatore);
+        
+        // Generate a background color based on username
+        const avatarColor = getAvatarColor(operatore.username);
+        
+        const card = document.createElement('div');
+        card.className = 'col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4';
+        
+        card.innerHTML = `
+            <div class="card h-100 shadow-sm operator-card-busy">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <div class="avatar-circle mx-auto" style="width: 80px; height: 80px; background-color: ${avatarColor}; color: white; font-size: 32px;">
+                            ${initials}
+                        </div>
+                    </div>
+                    <h5 class="card-title">${operatore.firstName || ''} ${operatore.lastName || ''}</h5>
+                    <p class="card-text text-muted mb-1">@${operatore.username}</p>
+                    <p class="card-text small mb-3"><i class="fas fa-envelope me-1"></i>${operatore.email || 'No email'}</p>
+                    <div class="mb-3">
+                        <span class="badge ${operatore.role === 'admin' ? 'bg-danger' : 'bg-primary'} mb-2">
+                            ${operatore.role === 'admin' ? 'Amministratore' : 'Operatore'}
+                        </span>
+                        <span class="badge bg-danger ms-1">
+                            Occupato
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <button class="btn btn-sm btn-info me-2 view-operator" data-id="${operatore.username}">
+                            <i class="fas fa-info-circle"></i> Info
+                        </button>
+                        <button class="btn btn-sm btn-success me-2 assign-operator" data-id="${operatore.username}">
+                            <i class="fas fa-clipboard-list"></i> Assegna
+                        </button>
+                        ${isAdmin ? `
+                            <button class="btn btn-sm btn-warning me-2 edit-operator" data-id="${operatore.username}">
+                                <i class="fas fa-edit"></i> Modifica
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-operator" data-id="${operatore.username}">
+                                <i class="fas fa-trash"></i> Elimina
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <small class="text-muted">
+                        <i class="fas fa-clipboard-check me-1"></i>Perizie: <span class="fw-bold">${perizieAssegnate.length}</span>
+                    </small>
+                </div>
+            </div>
+        `;
+        
+        cardsContainer.appendChild(card);
+    });
+    
+    // Aggiungi event listeners ai bottoni
+    addOperatorButtonListeners();
+}
+    
 }
 
 
@@ -1576,111 +2118,9 @@ customStyles.textContent = `
 document.head.appendChild(customStyles);
 
 // Verificare che il contenitore perizie-content esista, altrimenti crearlo
-if (!document.getElementById('perizie-content')) {
-    const perizieContentDiv = document.createElement('div');
-    perizieContentDiv.id = 'perizie-content';
-    perizieContentDiv.className = 'container d-none';
-    perizieContentDiv.innerHTML = `
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <h2>Gestione Perizie</h2>
-                    <div class="card mb-4">
-                        <div class="card-header bg-primary text-white">
-                            <i class="fas fa-map-marked-alt me-2"></i>Mappa delle perizie
-                        </div>
-                        <div class="card-body">
-                            <div id="perizieMappa" style="height: 400px;"></div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="fas fa-clipboard-list me-2"></i>Elenco Perizie
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-light text-dark me-2">Totale: <span id="perizieTotali">0</span></span>
-                                <span class="badge bg-light text-dark">Visualizzate: <span id="perizieVisualizzate">0</span></span>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="selectAllInspections">
-                                    <label class="form-check-label" for="selectAllInspections">Seleziona tutti</label>
-                                </div>
-                                <div>
-                                    <button id="assignSelectedInspections" class="btn btn-sm btn-success me-2" disabled>
-                                        <i class="fas fa-user-tag me-1"></i>Assegna selezionate (0)
-                                    </button>
-                                    <button id="deleteSelectedInspections" class="btn btn-sm btn-danger" disabled>
-                                        <i class="fas fa-trash me-1"></i>Elimina selezionate (0)
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="headerCheckbox">
-                                                </div>
-                                            </th>
-                                            <th>ID</th>
-                                            <th>Operatore</th>
-                                            <th>Data</th>
-                                            <th>Tipo</th>
-                                            <th>Indirizzo</th>
-                                            <th>Stato</th>
-                                            <th>Foto</th>
-                                            <th>Azioni</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="perizieTableBody">
-                                        <!-- Dati perizie verranno inseriti qui -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-between align-items-center">
-                            <div>
-                                Totale perizie: <span id="perizieTotaliFooter">0</span>
-                            </div>
-                            <nav aria-label="Paginazione perizie">
-                                <ul class="pagination mb-0">
-                                    <li class="page-item disabled">
-                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Precedente</a>
-                                    </li>
-                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="#">Successiva</a>
-                                    </li>
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    const dashboardSection = document.getElementById('dashboardSection');
-    if (dashboardSection) {
-        dashboardSection.appendChild(perizieContentDiv);
-    } else {
-        console.error("dashboardSection element not found - add it to your HTML");
-        // Create dashboardSection if it doesn't exist
-        const dashboardSectionDiv = document.createElement('div');
-        dashboardSectionDiv.id = 'dashboardSection';
-        document.body.appendChild(dashboardSectionDiv);
-        dashboardSectionDiv.appendChild(perizieContentDiv);
-    }
-}
 const dashboardSection = document.getElementById('dashboardSection');
 if (dashboardSection) {
     dashboardSection.appendChild(perizieContentDiv);
-} else {
-    console.error("dashboardSection element not found in the DOM");
 }
 // Login form submit handler
 const loginForm = document.getElementById("loginForm");
@@ -2216,12 +2656,6 @@ function updateSelectedCount() {
     const selectedCheckboxes = document.querySelectorAll('.inspection-select:checked');
     const count = selectedCheckboxes.length;
 
-    // Update the text in the assign button
-    const assignButton = document.getElementById('assignSelectedInspections');
-    if (assignButton) {
-        assignButton.innerHTML = `<i class="fas fa-user-tag me-1"></i>Assegna selezionate (${count})`;
-        assignButton.disabled = count === 0;
-    }
 
     // Update the text in the delete button
     const deleteButton = document.getElementById('deleteSelectedInspections');
@@ -2308,28 +2742,28 @@ async function assignSelectedPerizie() {
         }
         return;
     }
-    
+
     // Raccogliere gli ID delle perizie selezionate
     const ids = Array.from(selectedCheckboxes)
-        .filter(checkbox => !checkbox.disabled) // Ignora le perizie già assegnate
         .map(checkbox => checkbox.getAttribute('data-id'));
-    
+
     if (ids.length === 0) {
         if (window.Swal) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Impossibile procedere',
-                text: 'Tutte le perizie selezionate sono già assegnate'
+                text: 'Nessuna perizia selezionata'
             });
         }
         return;
     }
 
+
     try {
         // Recupera la lista degli operatori
         const operatori = await inviaRichiesta("GET", "/api/users");
         const operatoriAttivi = operatori.filter(op => op.role !== 'admin');
-        
+
         if (!operatoriAttivi.length) {
             if (window.Swal) {
                 Swal.fire({
@@ -2340,9 +2774,9 @@ async function assignSelectedPerizie() {
             }
             return;
         }
-        
+
         // Crea le opzioni per il dropdown degli operatori
-        const operatoriOptions = operatoriAttivi.map(op => 
+        const operatoriOptions = operatoriAttivi.map(op =>
             `<option value="${op.username}">${op.firstName || ''} ${op.lastName || ''} (${op.username})</option>`
         ).join('');
 
@@ -2369,11 +2803,11 @@ async function assignSelectedPerizie() {
                     return operatorId;
                 }
             });
-            
+
             if (result.isConfirmed && result.value) {
                 const operatoreId = result.value;
                 const operatore = operatori.find(op => op.username === operatoreId);
-                
+
                 // Mostra il loader
                 Swal.fire({
                     title: 'Assegnazione in corso...',
@@ -2383,21 +2817,21 @@ async function assignSelectedPerizie() {
                         Swal.showLoading();
                     }
                 });
-                
+
                 // Prepara i dati per l'aggiornamento
                 const updateData = {
                     operatoreId: operatore.username,
                     operatore: `${operatore.firstName || ''} ${operatore.lastName || ''}`.trim() || operatore.username
                 };
-                
+
                 // Esegui le chiamate API per aggiornare ogni perizia
-                const updatePromises = ids.map(id => 
+                const updatePromises = ids.map(id =>
                     inviaRichiesta("PATCH", `/api/perizie/${id}`, updateData)
                 );
-                
+
                 // Attendi che tutte le chiamate siano completate
                 await Promise.all(updatePromises);
-                
+
                 // Aggiorna i dati locali
                 if (window.perizie) {
                     ids.forEach(id => {
@@ -2408,12 +2842,12 @@ async function assignSelectedPerizie() {
                         }
                     });
                 }
-                
+
                 // Ricarica i dati e l'interfaccia
                 await loadPerizie();
                 loadPerizieTable();
                 updatePerizieCounts();
-                
+
                 // Mostra messaggio di successo
                 Swal.fire({
                     icon: 'success',
@@ -2424,61 +2858,70 @@ async function assignSelectedPerizie() {
         }
     } catch (error) {
         console.error("Errore nell'assegnazione delle perizie:", error);
-        if (window.Swal) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Errore',
-                text: `Si è verificato un errore: ${error.message}`
-            });
-        }
+        Swal.fire({
+                    icon: 'success',
+                    title: 'Assegnazione completata',
+                    text: `${ids.length} perizie assegnate con successo a ${updateData.operatore}`
+                });
     }
 }
 
 // Function to update a perizia
+// Function to update a perizia
 async function updatePerizia(id, updateData) {
     try {
-        const response = await inviaRichiesta("PATCH", `/api/perizie/${id}`, updateData);
-
-        if (response && response.success) {
-            // Reload perizie after update
-            await loadPerizie();
-
-            // Refresh the table if we're in the perizie section
-            if (!document.getElementById('perizie-content').classList.contains('d-none')) {
-                loadPerizieTable();
-            }
-
-            // Show success message
-            if (window.Swal) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Perizia Aggiornata',
-                    text: 'La perizia è stata aggiornata con successo',
-                    confirmButtonColor: '#3085d6'
-                });
-            } else {
-                alert('La perizia è stata aggiornata con successo');
-            }
-        } else {
-            throw new Error("Errore nell'aggiornamento della perizia");
+        // Add 'updated' status if not specified
+        if (!updateData.stato) {
+            updateData.stato = 'updated';
         }
+        
+        // Update lastUpdate timestamp
+        updateData.ultimoAggiornamento = new Date().toISOString();
+        
+        // Make API call
+        await inviaRichiesta("PATCH", `/api/perizie/${id}`, updateData);
+        
+        // Update local data
+        if (window.perizie) {
+            const index = window.perizie.findIndex(p => p.id === id);
+            if (index !== -1) {
+                window.perizie[index] = { ...window.perizie[index], ...updateData };
+            }
+        }
+        
+        // Show success message
+        if (window.Swal) {
+            await Swal.fire({
+                icon: 'success',
+                title: 'Perizia aggiornata',
+                text: `La perizia ${id} è stata aggiornata con successo`,
+                confirmButtonColor: '#28a745'
+            });
+        } else {
+            alert(`La perizia ${id} è stata aggiornata con successo`);
+        }
+        
+        // Reload data
+        await loadPerizie();
+        loadPerizieTable();
+        
     } catch (error) {
         console.error("Errore nell'aggiornamento della perizia:", error);
         if (window.Swal) {
             Swal.fire({
                 icon: 'error',
                 title: 'Errore',
-                text: `Impossibile aggiornare la perizia: ${error.message}`,
-                confirmButtonColor: '#3085d6'
+                text: `Si è verificato un errore durante l'aggiornamento: ${error.message}`,
+                confirmButtonColor: '#dc3545'
             });
         } else {
-            alert(`Impossibile aggiornare la perizia: ${error.message}`);
+            alert(`Si è verificato un errore durante l'aggiornamento: ${error.message}`);
         }
     }
 }
 
 
-
+// Fixed function for loading perizie table
 // Fixed function for loading perizie table
 function loadPerizieTable(filteredPerizie = null) {
     console.log("Caricamento tabella perizie...");
@@ -2522,9 +2965,9 @@ function loadPerizieTable(filteredPerizie = null) {
             minute: '2-digit'
         });
 
-        // Determine status badge - now considers operatoreId
-        const statusText = getStatusText(perizia.stato, perizia.operatoreId);
-        const statusBadgeColor = getStatusBadgeColor(perizia.stato, perizia.operatoreId);
+        // Determine status badge - simplified status
+        const statusText = getStatusText(perizia.stato);
+        const statusBadgeColor = getStatusBadgeColor(perizia.stato);
         const statusBadge = `<span class="badge bg-${statusBadgeColor}">${statusText}</span>`;
 
         // Count photos
@@ -2533,7 +2976,7 @@ function loadPerizieTable(filteredPerizie = null) {
         row.innerHTML = `
             <td>
                 <div class="form-check">
-                    <input class="form-check-input inspection-select" type="checkbox" data-id="${perizia.id}" ${perizia.operatoreId ? 'disabled title="Perizia già assegnata"' : ''}>
+                    <input class="form-check-input inspection-select" type="checkbox" data-id="${perizia.id}">
                 </div>
             </td>
             <td>${perizia.id}</td>
@@ -2550,7 +2993,7 @@ function loadPerizieTable(filteredPerizie = null) {
                 <button class="btn btn-sm btn-warning edit-inspection" data-id="${perizia.id}">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn btn-sm btn-danger delete-inspection" data-id="${perizia.id}" ${perizia.operatoreId ? 'disabled title="Non puoi eliminare una perizia assegnata"' : ''}>
+                <button class="btn btn-sm btn-danger delete-inspection" data-id="${perizia.id}">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -2561,152 +3004,20 @@ function loadPerizieTable(filteredPerizie = null) {
 
     // Add event listeners to action buttons
     document.querySelectorAll('.view-inspection').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             viewPerizia(this.getAttribute('data-id'));
         });
     });
 
     document.querySelectorAll('.edit-inspection').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             editPerizia(this.getAttribute('data-id'));
         });
     });
-    async function editPerizia(id) {
-        // Verifica permessi amministratore
-        if (!checkAdminPermission()) return;
-        
-        try {
-            // Recupera i dati della perizia
-            const perizia = window.perizie.find(p => p.id === id);
-            if (!perizia) {
-                throw new Error('Perizia non trovata');
-            }
-            
-            // Recupera la lista degli operatori per il dropdown
-            const operatori = await inviaRichiesta("GET", "/api/users");
-            const operatoriOptions = operatori
-                .filter(op => op.role !== 'admin')
-                .map(op => 
-                    `<option value="${op.username}" ${perizia.operatoreId === op.username ? 'selected' : ''}>
-                        ${op.firstName || ''} ${op.lastName || ''} (${op.username})
-                    </option>`
-                )
-                .join('');
-            
-            // Formatta la data per l'input datetime-local
-            const formattedDate = perizia.data ? new Date(perizia.data).toISOString().slice(0, 16) : '';
-            
-            // Mostra il form di modifica
-            if (window.Swal) {
-                const result = await Swal.fire({
-                    title: `Modifica Perizia ${perizia.id}`,
-                    html: `
-                        <form id="editPeriziaForm" class="text-start">
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <label for="editTipo" class="form-label">Tipo perizia</label>
-                                    <select class="form-select" id="editTipo">
-                                        <option value="incendio" ${perizia.tipo === 'incendio' ? 'selected' : ''}>Incendio</option>
-                                        <option value="allagamento" ${perizia.tipo === 'allagamento' ? 'selected' : ''}>Allagamento</option>
-                                        <option value="furto" ${perizia.tipo === 'furto' ? 'selected' : ''}>Furto</option>
-                                        <option value="grandine" ${perizia.tipo === 'grandine' ? 'selected' : ''}>Grandine</option>
-                                        <option value="altro" ${!['incendio', 'allagamento', 'furto', 'grandine'].includes(perizia.tipo) ? 'selected' : ''}>Altro</option>
-                                    </select>
-                                </div>
-                                <div class="col">
-                                    <label for="editOperatore" class="form-label">Operatore</label>
-                                    <select class="form-select" id="editOperatore">
-                                        <option value="">-- Nessun operatore --</option>
-                                        ${operatoriOptions}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="editData" class="form-label">Data</label>
-                                <input type="datetime-local" class="form-control" id="editData" value="${formattedDate}">
-                            </div>
-                            <div class="mb-3">
-                                <label for="editIndirizzo" class="form-label">Indirizzo</label>
-                                <input type="text" class="form-control" id="editIndirizzo" 
-                                    value="${perizia.posizione && perizia.posizione.indirizzo ? perizia.posizione.indirizzo : ''}">
-                            </div>
-                            <div class="mb-3">
-                                <label for="editDescrizione" class="form-label">Descrizione</label>
-                                <textarea class="form-control" id="editDescrizione" rows="3">${perizia.descrizione || ''}</textarea>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <label for="editStato" class="form-label">Stato</label>
-                                    <select class="form-select" id="editStato">
-                                        <option value="pending" ${perizia.stato === 'pending' ? 'selected' : ''}>In attesa</option>
-                                        <option value="scheduled" ${perizia.stato === 'scheduled' ? 'selected' : ''}>Pianificata</option>
-                                        <option value="in_progress" ${perizia.stato === 'in_progress' ? 'selected' : ''}>In corso</option>
-                                        <option value="completed" ${perizia.stato === 'completed' ? 'selected' : ''}>Completata</option>
-                                    </select>
-                                </div>
-                                <div class="col">
-                                    <label for="editPriorita" class="form-label">Priorità</label>
-                                    <select class="form-select" id="editPriorita">
-                                        <option value="low" ${perizia.priorita === 'low' ? 'selected' : ''}>Bassa</option>
-                                        <option value="medium" ${perizia.priorita === 'medium' ? 'selected' : ''}>Media</option>
-                                        <option value="high" ${perizia.priorita === 'high' ? 'selected' : ''}>Alta</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </form>
-                    `,
-                    width: 800,
-                    showCancelButton: true,
-                    confirmButtonText: 'Salva Modifiche',
-                    cancelButtonText: 'Annulla',
-                    confirmButtonColor: '#28a745',
-                    cancelButtonColor: '#dc3545'
-                });
-                
-                if (result.isConfirmed) {
-                    const selectedOperator = document.getElementById('editOperatore').value;
-                    let operatoreNome = '';
-                    
-                    if (selectedOperator) {
-                        const selectedOperatorObj = operatori.find(op => op.username === selectedOperator);
-                        if (selectedOperatorObj) {
-                            operatoreNome = `${selectedOperatorObj.firstName || ''} ${selectedOperatorObj.lastName || ''}`.trim();
-                        }
-                    }
-                    
-                    // Prepara i dati per l'aggiornamento
-                    const updateData = {
-                        tipo: document.getElementById('editTipo').value,
-                        data: new Date(document.getElementById('editData').value).toISOString(),
-                        descrizione: document.getElementById('editDescrizione').value,
-                        stato: document.getElementById('editStato').value,
-                        priorita: document.getElementById('editPriorita').value,
-                        operatoreId: selectedOperator || null,
-                        operatore: operatoreNome || null,
-                        'posizione.indirizzo': document.getElementById('editIndirizzo').value
-                    };
-                    
-                    // Aggiorna la perizia
-                    await updatePerizia(id, updateData);
-                }
-            }
-        } catch (error) {
-            console.error("Errore nella modifica della perizia:", error);
-            if (window.Swal) {
-                Swal.fire({
-                    icon: 'error', 
-                    title: 'Errore',
-                    text: `Impossibile modificare la perizia: ${error.message}`
-                });
-            }
-        }
-    }
 
     document.querySelectorAll('.delete-inspection').forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (!this.hasAttribute('disabled')) {
-                deletePerizia(this.getAttribute('data-id'));
-            }
+        btn.addEventListener('click', function () {
+            deletePerizia(this.getAttribute('data-id'));
         });
     });
 
@@ -2716,6 +3027,158 @@ function loadPerizieTable(filteredPerizie = null) {
     });
 }
 
+
+// Add new function to create perizia by operator
+async function createNewPerizia() {
+    // Check if user is logged in
+    const userData = JSON.parse(localStorage.getItem("currentUser"));
+    if (!userData) {
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Errore',
+                text: 'È necessario effettuare il login per creare una perizia',
+                confirmButtonColor: '#3085d6'
+            });
+        }
+        return;
+    }
+
+    // Show form to create new perizia
+    if (window.Swal) {
+        Swal.fire({
+            title: 'Crea Nuova Perizia',
+            html: `
+                <form id="createInspectionForm" class="text-start">
+                    <div class="mb-3">
+                        <label for="inspectionType" class="form-label">Tipo di perizia*</label>
+                        <select class="form-select" id="inspectionType" required>
+                            <option value="" selected disabled>Seleziona il tipo</option>
+                            <option value="incendio">Incendio</option>
+                            <option value="allagamento">Allagamento</option>
+                            <option value="grandine">Grandine</option>
+                            <option value="furto">Furto</option>
+                            <option value="altro">Altro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inspectionAddress" class="form-label">Indirizzo*</label>
+                        <input type="text" class="form-control" id="inspectionAddress" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inspectionDescription" class="form-label">Descrizione*</label>
+                        <textarea class="form-control" id="inspectionDescription" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="clientName" class="form-label">Nome Cliente*</label>
+                        <input type="text" class="form-control" id="clientName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="clientContact" class="form-label">Contatto Cliente*</label>
+                        <input type="text" class="form-control" id="clientContact" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="policyNumber" class="form-label">Numero Polizza*</label>
+                        <input type="text" class="form-control" id="policyNumber" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Priorità</label>
+                        <select class="form-select" id="priority">
+                            <option value="low">Bassa</option>
+                            <option value="medium" selected>Media</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                </form>
+            `,
+            width: 600,
+            showCancelButton: true,
+            confirmButtonText: 'Crea Perizia',
+            cancelButtonText: 'Annulla',
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#dc3545',
+            preConfirm: () => {
+                const tipo = document.getElementById('inspectionType').value;
+                const indirizzo = document.getElementById('inspectionAddress').value?.trim();
+                const descrizione = document.getElementById('inspectionDescription').value?.trim();
+                const clienteNome = document.getElementById('clientName').value?.trim();
+                const clienteContatto = document.getElementById('clientContact').value?.trim();
+                const polizza = document.getElementById('policyNumber').value?.trim();
+
+                if (!tipo || !indirizzo || !descrizione || !clienteNome || !clienteContatto || !polizza) {
+                    Swal.showValidationMessage('Tutti i campi obbligatori devono essere compilati');
+                    return false;
+                }
+
+                // Generate a new ID (format: PRZ-YYYY-XXX)
+                const now = new Date();
+                const year = now.getFullYear();
+                // In a real app, you would get the next sequential number from the server
+                const nextId = Math.floor(Math.random() * 900) + 100; // Just for demo
+                const id = `PRZ-${year}-${nextId.toString().padStart(3, '0')}`;
+
+                return {
+                    id: id,
+                    operatoreId: userData.username,
+                    operatore: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.username,
+                    data: now.toISOString(),
+                    tipo: tipo,
+                    posizione: {
+                        indirizzo: indirizzo,
+                        // In a real app, you would geocode the address to get lat/lng
+                        lat: 0,
+                        lng: 0
+                    },
+                    descrizione: descrizione,
+                    cliente: {
+                        nome: clienteNome,
+                        contatto: clienteContatto
+                    },
+                    polizza: polizza,
+                    priorita: document.getElementById('priority').value,
+                    stato: "completed", // New perizie are marked as completed by default
+                    fotografie: [],
+                    ultimoAggiornamento: now.toISOString()
+                };
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    // Show loader
+                    Swal.fire({
+                        title: 'Creazione perizia in corso...',
+                        html: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>',
+                        showConfirmButton: false,
+                        allowOutsideClick: false
+                    });
+
+                    // Create the perizia
+                    await inviaRichiesta("POST", "/api/perizie", result.value);
+
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Successo',
+                        text: `Perizia ${result.value.id} creata con successo`,
+                        confirmButtonColor: '#28a745'
+                    });
+
+                    // Reload perizie
+                    await loadPerizie();
+                    loadPerizieTable();
+                } catch (error) {
+                    console.error("Errore nella creazione della perizia:", error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Errore',
+                        text: `Si è verificato un errore durante la creazione: ${error.message}`,
+                        confirmButtonColor: '#3085d6'
+                    });
+                }
+            }
+        });
+    }
+}
 // Function for deleting perizie by IDs (corrected version)
 async function deletePerizieByIds(ids) {
     try {
@@ -2843,7 +3306,7 @@ function initOperatoriPage() {
     if (operatoriContent) {
         operatoriContent.classList.remove('d-none');
     }
-    
+
     // Nascondi il vecchio pulsante se l'utente è admin (lo sostituiamo con la card)
     const addOperatorBtn = document.getElementById('addOperatoreBtn');
     if (addOperatorBtn && isUserAdmin()) {
@@ -2852,11 +3315,11 @@ function initOperatoriPage() {
     // Mostra loader
     const loaderElement = document.getElementById('operatori-loader');
     if (loaderElement) loaderElement.classList.remove('d-none');
-    
+
     // Clear container and hide alerts
     const cardsContainer = document.getElementById('operatori-cards');
     if (cardsContainer) cardsContainer.innerHTML = '';
-    
+
     const alertElement = document.getElementById('operatori-alert');
     if (alertElement) alertElement.classList.add('d-none');
 
@@ -2871,19 +3334,19 @@ function initOperatoriPage() {
 }
 function fixAddOperatorButton() {
     console.log("Tentativo di correggere il pulsante Nuovo Operatore");
-    
+
     // Cerca il pulsante nel DOM
     const addOperatorBtn = document.getElementById('addOperatoreBtn');
-    
+
     if (addOperatorBtn) {
         console.log("Pulsante trovato, aggiungo event listener");
-        
+
         // Rimuovi eventuali event listener esistenti per evitare duplicati
         const newButton = addOperatorBtn.cloneNode(true);
         addOperatorBtn.parentNode.replaceChild(newButton, addOperatorBtn);
-        
+
         // Aggiungi il nuovo event listener
-        newButton.addEventListener('click', function(e) {
+        newButton.addEventListener('click', function (e) {
             e.preventDefault();
             console.log("Pulsante Nuovo Operatore cliccato!");
             addOperatore();
@@ -2897,7 +3360,7 @@ function fixAddOperatorButton() {
 document.addEventListener('DOMContentLoaded', fixAddOperatorButton);
 
 // Aggiungi anche un listener globale per clicks sul documento per catturare il click sul pulsante
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     if (e.target && (e.target.id === 'addOperatoreBtn' || e.target.closest('#addOperatoreBtn'))) {
         console.log("Click rilevato sul pulsante Nuovo Operatore tramite event delegation");
         e.preventDefault();
@@ -2950,13 +3413,13 @@ function showOperatoriError(message) {
 function displayOperatori(operatori) {
     const cardsContainer = document.getElementById('operatori-cards');
     if (!cardsContainer) return;
-    
+
     // Svuota il contenitore
     cardsContainer.innerHTML = '';
-    
+
     // Verifica se l'utente è admin per aggiungere la card "+"
     const isAdmins = isUserAdmin();
-    
+
     // Se l'utente è admin, aggiungi la card per nuovo operatore
     if (isAdmins) {
         const addCard = document.createElement('div');
@@ -2974,7 +3437,7 @@ function displayOperatori(operatori) {
         `;
         cardsContainer.appendChild(addCard);
     }
-    
+
     // Verifica se ci sono operatori
     if (!operatori || operatori.length === 0) {
         cardsContainer.innerHTML += `
@@ -2986,37 +3449,37 @@ function displayOperatori(operatori) {
         `;
         return;
     }
-    
+
     // Verifico quali operatori hanno perizie assegnate
     const perizie = window.perizie || [];
-    
+
     // Verifica se l'utente loggato è amministratore
     const isAdmin = isUserAdmin();
-    
+
     // Crea una card per ogni operatore
     operatori.forEach(operatore => {
         // Controlla se l'operatore ha perizie assegnate
-        const perizieAssegnate = perizie.filter(p => 
-            p.operatoreId === operatore.username || 
+        const perizieAssegnate = perizie.filter(p =>
+            p.operatoreId === operatore.username ||
             p.operatore === operatore.username ||
             (p.operatore && p.operatore.includes(operatore.username))
         );
-        
+
         // Determina lo stato dell'operatore
         const isOccupato = perizieAssegnate.length > 0;
-        
+
         // Generate initials for avatar
         const initials = getOperatorInitials(operatore);
-        
+
         // Generate a background color based on username
         const avatarColor = getAvatarColor(operatore.username);
-        
+
         const card = document.createElement('div');
         card.className = 'col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4';
-        
+
         // Determina la classe di sfondo della card in base allo stato
         const cardBackground = isOccupato ? 'operator-card-busy' : 'operator-card-available';
-        
+
         card.innerHTML = `
             <div class="card h-100 shadow-sm ${cardBackground}">
                 <div class="card-body text-center">
@@ -3060,10 +3523,10 @@ function displayOperatori(operatori) {
                 </div>
             </div>
         `;
-        
+
         cardsContainer.appendChild(card);
     });
-    
+
     // Aggiungi event listeners ai bottoni
     addOperatorButtonListeners();
 }
@@ -3228,7 +3691,7 @@ async function viewOperatorInfo(operatorId) {
                                 </div>
                             </div>
                             <hr>
-                            <h5 class="mb-3">Perizie Recenti</h5>
+                            <h5 class="mb-3">Perizie non assegnate</h5>
                             ${perizieHtml}
                         </div>
                     `,
@@ -3259,19 +3722,19 @@ async function assignPerizie(operatorId) {
     try {
         // Verifica che l'utente sia amministratore
         if (!checkAdminPermission()) return;
-        
+
         // Ottieni i dati dell'operatore
         const operatori = await inviaRichiesta("GET", "/api/users");
         const operatore = operatori.find(op => op.username === operatorId);
-        
+
         if (!operatore) {
             throw new Error('Operatore non trovato');
         }
-        
+
         // Ottieni le perizie disponibili (non assegnate)
         const perizie = window.perizie || await inviaRichiesta("GET", "/api/perizie");
         const perizieNonAssegnate = perizie.filter(p => !p.operatoreId && !p.operatore);
-        
+
         // Se non ci sono perizie non assegnate
         if (perizieNonAssegnate.length === 0) {
             if (window.Swal) {
@@ -3285,7 +3748,7 @@ async function assignPerizie(operatorId) {
             }
             return;
         }
-        
+
         // Prepare perizie HTML for selection
         const perizieOptionsHtml = perizieNonAssegnate.map(p => `
             <div class="form-check mb-2">
@@ -3297,7 +3760,7 @@ async function assignPerizie(operatorId) {
                 <small class="text-muted d-block">${p.tipo || 'N/D'} - ${p.posizione?.indirizzo || 'N/D'}</small>
             </div>
         `).join('');
-        
+
         // Mostra la form per l'assegnazione
         if (window.Swal) {
             Swal.fire({
@@ -3327,7 +3790,7 @@ async function assignPerizie(operatorId) {
                 cancelButtonColor: '#dc3545',
                 didOpen: () => {
                     // Add event listener to "select all" checkbox
-                    document.getElementById('selectAllPerizie').addEventListener('change', function() {
+                    document.getElementById('selectAllPerizie').addEventListener('change', function () {
                         const checkboxes = document.querySelectorAll('.perizia-checkbox');
                         checkboxes.forEach(checkbox => {
                             checkbox.checked = this.checked;
@@ -3337,12 +3800,12 @@ async function assignPerizie(operatorId) {
                 preConfirm: () => {
                     const selectedIds = Array.from(document.querySelectorAll('.perizia-checkbox:checked'))
                         .map(cb => cb.value);
-                    
+
                     if (selectedIds.length === 0) {
                         Swal.showValidationMessage('Seleziona almeno una perizia');
                         return false;
                     }
-                    
+
                     return { selectedIds };
                 }
             }).then(async (result) => {
@@ -3381,14 +3844,14 @@ async function performAssignPerizie(operatore, perizieIds) {
                 }
             });
         }
-        
+
         // Verifica che le perizie non siano già assegnate
         const perizie = window.perizie || await inviaRichiesta("GET", "/api/perizie");
         const perizieGiaAssegnate = perizieIds.filter(id => {
             const perizia = perizie.find(p => p.id === id);
             return perizia && (perizia.operatoreId || perizia.operatore);
         });
-        
+
         if (perizieGiaAssegnate.length > 0) {
             // Alcune perizie sono già assegnate
             if (window.Swal) {
@@ -3403,21 +3866,21 @@ async function performAssignPerizie(operatore, perizieIds) {
             }
             return;
         }
-        
+
         // Prepara i dati per l'aggiornamento
         const updateData = {
             operatoreId: operatore.username,
             operatore: `${operatore.firstName || ''} ${operatore.lastName || ''}`.trim() || operatore.username
         };
-        
+
         // Esegui le chiamate API per aggiornare ogni perizia
-        const updatePromises = perizieIds.map(id => 
+        const updatePromises = perizieIds.map(id =>
             inviaRichiesta("PATCH", `/api/perizie/${id}`, updateData)
         );
-        
+
         // Attendi che tutte le chiamate siano completate
         await Promise.all(updatePromises);
-        
+
         // Aggiorna i dati locali
         if (window.perizie) {
             perizieIds.forEach(id => {
@@ -3428,7 +3891,7 @@ async function performAssignPerizie(operatore, perizieIds) {
                 }
             });
         }
-        
+
         // Mostra messaggio di successo
         if (window.Swal) {
             Swal.fire({
@@ -3440,11 +3903,11 @@ async function performAssignPerizie(operatore, perizieIds) {
         } else {
             alert(`${perizieIds.length} perizie assegnate con successo a ${updateData.operatore}`);
         }
-        
+
         // Ricarica i dati
         await loadPerizie();
         loadOperatori();
-        
+
     } catch (error) {
         console.error("Errore nell'assegnazione delle perizie:", error);
         if (window.Swal) {
@@ -3723,7 +4186,7 @@ async function addOperatore() {
                         Swal.showValidationMessage('Nome obbligatorio');
                         return false;
                     }
-                    
+
                     if (!lastName) {
                         Swal.showValidationMessage('Cognome obbligatorio');
                         return false;
@@ -3733,7 +4196,7 @@ async function addOperatore() {
                         Swal.showValidationMessage('Email obbligatoria');
                         return false;
                     }
-                    
+
                     // Genera username: prima lettera del nome + cognome, tutto minuscolo
                     const username = (firstName.charAt(0) + lastName).toLowerCase()
                         .replace(/\s+/g, '') // rimuovi spazi
@@ -3755,7 +4218,7 @@ async function addOperatore() {
                         password: 'password',
                         firstLogin: true
                     };
-                    
+
                     // Mostra lo username generato
                     await Swal.fire({
                         title: 'Username Generato',
@@ -3846,11 +4309,11 @@ function getStatusBadgeColor(stato, operatoreId) {
     if (operatoreId) {
         return 'warning'; // Giallo per "In esecuzione"
     }
-    
+
     if (!operatoreId) {
         return 'secondary'; // Grigio per "In attesa"
     }
-    
+
     switch (stato) {
         case 'completed': return 'success';
         case 'in_progress': return 'warning';
@@ -3866,12 +4329,12 @@ function getStatusText(stato, operatoreId) {
     if (operatoreId) {
         return 'In esecuzione';
     }
-    
+
     // Altrimenti mostra "In attesa" o lo stato originale
     if (!operatoreId) {
         return 'In attesa';
     }
-    
+
     switch (stato) {
         case 'completed': return 'Completata';
         case 'in_progress': return 'In corso';
@@ -3880,11 +4343,11 @@ function getStatusText(stato, operatoreId) {
         default: return 'N/D';
     }
 
-   
+
 }
 
 // Aggiungi l'event listener per il link Operatori nella barra di navigazione
-window.addOperatore = async function() {
+window.addOperatore = async function () {
     try {
         // Verifica che l'utente sia amministratore
         if (!checkAdminPermission()) return;
@@ -3932,7 +4395,7 @@ window.addOperatore = async function() {
                         Swal.showValidationMessage('Nome obbligatorio');
                         return false;
                     }
-                    
+
                     if (!lastName) {
                         Swal.showValidationMessage('Cognome obbligatorio');
                         return false;
@@ -3942,7 +4405,7 @@ window.addOperatore = async function() {
                         Swal.showValidationMessage('Email obbligatoria');
                         return false;
                     }
-                    
+
                     // Genera username: prima lettera del nome + cognome, tutto minuscolo
                     const username = (firstName.charAt(0) + lastName).toLowerCase()
                         .replace(/\s+/g, '') // rimuovi spazi
@@ -3964,7 +4427,7 @@ window.addOperatore = async function() {
                         password: 'password',
                         firstLogin: true
                     };
-                    
+
                     // Mostra lo username generato
                     await Swal.fire({
                         title: 'Username Generato',
@@ -3994,7 +4457,7 @@ window.addOperatore = async function() {
     }
 };
 
- function sweetalert(title, text, icon, confirmButtonText,color) {
+function sweetalert(title, text, icon, confirmButtonText, color) {
     if (window.Swal) {
         Swal.fire({
             title: title,

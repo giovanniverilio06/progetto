@@ -11,7 +11,7 @@ const path = require('path');
 
 /* ********************** MONGO CONFIG ********************* */
 dotenv.config({ path: ".env" });
-const connectionString = "mongodb://localhost:27017/";
+const connectionString = process.env.CONNECTION_STRING_ATLAS || "mongodb://localhost:27017";
 const DB_NAME = "Progetto_rilievi_e_perizie";
 
 /* ********************** HTTP server ********************** */
